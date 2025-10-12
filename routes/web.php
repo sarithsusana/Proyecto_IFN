@@ -1,16 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+use Illuminate\Support\Facades\File;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+    $path = public_path('app/index.html');
+    if (!File::exists($path)) {
+        abort(404, 'Frontend no encontrado');
+    }
+    return response()->file($path);
 });
 
 require __DIR__.'/settings.php';
