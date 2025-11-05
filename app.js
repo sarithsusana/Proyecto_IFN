@@ -1,0 +1,2159 @@
+// app.js - Aplicación principal del IFN
+
+// Actualizar año
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// Base de datos de usuarios simulada
+const UsersDB = {
+  usuarios: [
+    {
+      id: 1,
+      email: 'admin@ifn.gov.co',
+      password: 'Admin123*',
+      role: 'Administrador',
+      nombre: 'Administrador Sistema',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 2,
+      email: 'coordinador@ifn.gov.co',
+      password: 'Coord123*',
+      role: 'Coordinador',
+      nombre: 'Coordinador Regional',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 3,
+      email: 'tecnico@ifn.gov.co',
+      password: 'Tecnico123*',
+      role: 'Tecnico',
+      nombre: 'Técnico de Campo',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 4,
+      email: 'botanico@ifn.gov.co',
+      password: 'Botanico123*',
+      role: 'Botanico',
+      nombre: 'Botánico Especialista',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 5,
+      email: 'coordinador2@ifn.gov.co',
+      password: 'Coord456*',
+      role: 'Coordinador',
+      nombre: 'Coordinador Zona Norte',
+      activo: true,
+      fechaCreacion: '2024-02-20T10:30:00Z'
+    },
+    {
+      id: 6,
+      email: 'tecnico2@ifn.gov.co',
+      password: 'Tecnico456*',
+      role: 'Tecnico',
+      nombre: 'Técnico Zona Sur',
+      activo: true,
+      fechaCreacion: '2024-02-20T10:30:00Z'
+    }
+  ],
+
+  // Método para validar credenciales
+  validarCredenciales(email, password) {
+    const usuario = this.usuarios.find(u => 
+      u.email.toLowerCase() === email.toLowerCase() && 
+      u.password === password &&
+      u.activo === true
+    );
+    
+    if (usuario) {
+      return {
+        id: usuario.id,
+        email: usuario.email,
+        role: usuario.role,
+        nombre: usuario.nombre
+      };
+    }
+    return null;
+  },
+
+  // Método para obtener usuario por email
+  obtenerUsuarioPorEmail(email) {
+    return this.usuarios.find(u => u.email.toLowerCase() === email.toLowerCase() && u.activo);
+  },
+
+  // Método para obtener todos los usuarios (para administrador)
+  obtenerTodosUsuarios() {
+    return this.usuarios.map(u => ({
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      nombre: u.nombre,
+      activo: u.activo,
+      fechaCreacion: u.fechaCreacion
+    }));
+  }
+};
+
+// Contadores animados para la sección hero
+function animateCounter(elementId, finalValue, duration = 2000) {
+  const element = document.getElementById(elementId);
+  if (!element) return;
+  
+  let start = 0;
+  const increment = finalValue / (duration / 10);
+  const timer = setInterval(() => {
+    start += increment;
+    if (start >= finalValue) {
+      element.textContent = finalValue.toLocaleString();
+      clearInterval(timer);
+    } else {
+      element.textContent = Math.floor(start).toLocaleString();
+    }
+  }, 10);
+}
+
+// Inicializar contadores cuando la sección sea visible
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      animateCounter('counter1', 1250);
+      animateCounter('counter2', 5600);
+      animateCounter('counter3', 32);
+      observer.unobserve(entry.target);
+    }
+  });
+});
+
+// Observar la sección hero
+const heroSection = document.querySelector('.hero-section');
+if (heroSection) {
+  observer.observe(heroSection);
+}
+
+// Smooth scrolling para enlaces de navegación
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  });
+});
+
+// TOAST mejorado
+function showToast(message, type='success', duration=2400){
+  const cont = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = `toast align-items-center text-bg-${type} border-0`;
+  el.role = 'alert'; el.ariaLive='assertive'; el.ariaAtomic='true';
+  el.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button></div>`;
+  cont.appendChild(el);
+  const t = new bootstrap.Toast(el, {delay: duration});
+  t.show();
+  el.addEventListener('hidden.bs.toast', ()=> el.remove());
+}
+
+// STATE con localStorage y sistema de borradores
+const State = {
+  route: 'landing',
+  user: null,
+  data: {
+    conglomerados: [],
+    subparcelas: [], 
+    arboles: []
+  },
+  borradores: {
+    subparcela: null,
+    arbol: null,
+    conglomerado: null
+  },
+  mapReady: false, 
+  map: null, 
+  markers: null, 
+  activeForm: null,
+  autosaveTimeouts: {}
+};
+
+// Base de datos simulada
+const Database = {
+  conglomerados: [
+    {
+      id: 1,
+      codigo: "CONG-AMZ-001",
+      region: "Amazonía",
+      municipio: "Leticia",
+      vereda: "Kilómetro 11",
+      fecha: "2024-03-15",
+      brigada: "Brigada Amazonas",
+      latitud: -4.215278,
+      longitud: -69.940556,
+      observaciones: "Conglomerado en zona de bosque primario",
+      estado: "activo",
+      fechaCreacion: "2024-03-15T10:30:00Z"
+    },
+    {
+      id: 2,
+      codigo: "CONG-AND-001",
+      region: "Andina",
+      municipio: "Santander",
+      vereda: "Chicamocha",
+      fecha: "2024-04-20",
+      brigada: "Brigada Santander",
+      latitud: 6.605833,
+      longitud: -73.067778,
+      observaciones: "Conglomerado en zona de bosque seco tropical",
+      estado: "activo",
+      fechaCreacion: "2024-04-20T14:15:00Z"
+    },
+    {
+      id: 3,
+      codigo: "CONG-PAC-001",
+      region: "Pacífico",
+      municipio: "Buenaventura",
+      vereda: "La Barra",
+      fecha: "2024-05-10",
+      brigada: "Brigada Pacífico",
+      latitud: 3.880278,
+      longitud: -77.031111,
+      observaciones: "Conglomerado en zona de manglar",
+      estado: "activo",
+      fechaCreacion: "2024-05-10T08:45:00Z"
+    },
+    {
+      id: 4,
+      codigo: "CONG-CAR-001",
+      region: "Caribe",
+      municipio: "Santa Marta",
+      vereda: "Minca",
+      fecha: "2024-06-05",
+      brigada: "Brigada Caribe",
+      latitud: 11.145833,
+      longitud: -74.116667,
+      observaciones: "Conglomerado en Sierra Nevada",
+      estado: "activo",
+      fechaCreacion: "2024-06-05T11:20:00Z"
+    },
+    {
+      id: 5,
+      codigo: "CONG-ORI-001",
+      region: "Orinoquía",
+      municipio: "Villavicencio",
+      vereda: "Acacías",
+      fecha: "2024-07-12",
+      brigada: "Brigada Orinoquía",
+      latitud: 4.142222,
+      longitud: -73.626667,
+      observaciones: "Conglomerado en zona de sabana",
+      estado: "activo",
+      fechaCreacion: "2024-07-12T09:30:00Z"
+    }
+  ],
+
+  subparcelas: [
+    {
+      id: 1,
+      codigo: "SP-AMZ-001-A",
+      conglomerado: "CONG-AMZ-001",
+      estado: "activo",
+      coberturas: "Bosque denso alto",
+      latitud: -4.216389,
+      longitud: -69.941667,
+      fechaCreacion: "2024-03-16T09:15:00Z"
+    },
+    {
+      id: 2,
+      codigo: "SP-AMZ-001-B",
+      conglomerado: "CONG-AMZ-001",
+      estado: "activo",
+      coberturas: "Bosque denso alto",
+      latitud: -4.214167,
+      longitud: -69.939444,
+      fechaCreacion: "2024-03-16T10:30:00Z"
+    },
+    {
+      id: 3,
+      codigo: "SP-AND-001-A",
+      conglomerado: "CONG-AND-001",
+      estado: "activo",
+      coberturas: "Bosque seco tropical",
+      latitud: 6.606944,
+      longitud: -73.068889,
+      fechaCreacion: "2024-04-21T08:45:00Z"
+    },
+    {
+      id: 4,
+      codigo: "SP-PAC-001-A",
+      conglomerado: "CONG-PAC-001",
+      estado: "activo",
+      coberturas: "Manglar",
+      latitud: 3.881389,
+      longitud: -77.032222,
+      fechaCreacion: "2024-05-11T14:20:00Z"
+    },
+    {
+      id: 5,
+      codigo: "SP-CAR-001-A",
+      conglomerado: "CONG-CAR-001",
+      estado: "activo",
+      coberturas: "Bosque montano bajo",
+      latitud: 11.146944,
+      longitud: -74.117778,
+      fechaCreacion: "2024-06-06T10:15:00Z"
+    },
+    {
+      id: 6,
+      codigo: "SP-ORI-001-A",
+      conglomerado: "CONG-ORI-001",
+      estado: "activo",
+      coberturas: "Sabana arbolada",
+      latitud: 4.143333,
+      longitud: -73.627778,
+      fechaCreacion: "2024-07-13T11:45:00Z"
+    }
+  ],
+
+  arboles: [
+    {
+      id: 1,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-A",
+      nombreCientifico: "Ceiba pentandra",
+      nombresComunes: "Ceiba, bonga",
+      categoria: "Latifoliado",
+      dap: 45.2,
+      altura: 35.5,
+      latitud: -4.216389,
+      longitud: -69.941667,
+      azimut: 45,
+      usos: "maderable, ornamental",
+      observaciones: "Árbol emergente, buen estado fitosanitario",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-03-16",
+      fechaRegistro: "2024-03-16T09:30:00Z"
+    },
+    {
+      id: 2,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-A",
+      nombreCientifico: "Hevea brasiliensis",
+      nombresComunes: "Caucho, seringueira",
+      categoria: "Latifoliado",
+      dap: 32.8,
+      altura: 28.3,
+      latitud: -4.216389,
+      longitud: -69.941667,
+      azimut: 120,
+      usos: "maderable, látex",
+      observaciones: "Presencia de sangría para látex",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-03-16",
+      fechaRegistro: "2024-03-16T10:15:00Z"
+    },
+    {
+      id: 3,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-B",
+      nombreCientifico: "Bertholletia excelsa",
+      nombresComunes: "Nuez del Brasil, castaña",
+      categoria: "Latifoliado",
+      dap: 52.1,
+      altura: 42.7,
+      latitud: -4.214167,
+      longitud: -69.939444,
+      azimut: 285,
+      usos: "maderable, alimenticio",
+      observaciones: "Frutos inmaduros presentes",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-03-16",
+      fechaRegistro: "2024-03-16T11:20:00Z"
+    },
+    {
+      id: 4,
+      conglomerado: "CONG-AND-001",
+      subparcela: "SP-AND-001-A",
+      nombreCientifico: "Quercus humboldtii",
+      nombresComunes: "Roble, roble andino",
+      categoria: "Latifoliado",
+      dap: 38.5,
+      altura: 32.1,
+      latitud: 6.606944,
+      longitud: -73.068889,
+      azimut: 90,
+      usos: "maderable, protección",
+      observaciones: "Árbol dominante en la parcela",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-04-21",
+      fechaRegistro: "2024-04-21T09:00:00Z"
+    },
+    {
+      id: 5,
+      conglomerado: "CONG-AND-001",
+      subparcela: "SP-AND-001-A",
+      nombreCientifico: "Anacardium excelsum",
+      nombresComunes: "Caracolí, espavé",
+      categoria: "Latifoliado",
+      dap: 41.3,
+      altura: 29.8,
+      latitud: 6.606944,
+      longitud: -73.068889,
+      azimut: 210,
+      usos: "maderable, sombra",
+      observaciones: "Copa amplia, buen estado",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-04-21",
+      fechaRegistro: "2024-04-21T10:30:00Z"
+    },
+    {
+      id: 6,
+      conglomerado: "CONG-PAC-001",
+      subparcela: "SP-PAC-001-A",
+      nombreCientifico: "Rhizophora mangle",
+      nombresComunes: "Mangle rojo",
+      categoria: "Latifoliado",
+      dap: 22.7,
+      altura: 18.4,
+      latitud: 3.881389,
+      longitud: -77.032222,
+      azimut: 150,
+      usos: "protección costera, leña",
+      observaciones: "Raíces aéreas bien desarrolladas",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-05-11",
+      fechaRegistro: "2024-05-11T14:45:00Z"
+    },
+    {
+      id: 7,
+      conglomerado: "CONG-PAC-001",
+      subparcela: "SP-PAC-001-A",
+      nombreCientifico: "Avicennia germinans",
+      nombresComunes: "Mangle negro",
+      categoria: "Latifoliado",
+      dap: 19.8,
+      altura: 15.2,
+      latitud: 3.881389,
+      longitud: -77.032222,
+      azimut: 330,
+      usos: "protección costera, medicinal",
+      observaciones: "Neumatóforos visibles",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-05-11",
+      fechaRegistro: "2024-05-11T15:20:00Z"
+    },
+    {
+      id: 8,
+      conglomerado: "CONG-CAR-001",
+      subparcela: "SP-CAR-001-A",
+      nombreCientifico: "Swietenia macrophylla",
+      nombresComunes: "Caoba, aguano",
+      categoria: "Latifoliado",
+      dap: 48.9,
+      altura: 36.7,
+      latitud: 11.146944,
+      longitud: -74.117778,
+      azimut: 75,
+      usos: "maderable, ornamental",
+      observaciones: "Madera de alta calidad",
+      estado: "validado",
+      validadoPor: "Coordinador",
+      fecha: "2024-06-06",
+      fechaRegistro: "2024-06-06T10:45:00Z"
+    },
+    {
+      id: 9,
+      conglomerado: "CONG-CAR-001",
+      subparcela: "SP-CAR-001-A",
+      nombreCientifico: "Cedrela odorata",
+      nombresComunes: "Cedro, cedro amargo",
+      categoria: "Latifoliado",
+      dap: 36.4,
+      altura: 31.2,
+      latitud: 11.146944,
+      longitud: -74.117778,
+      azimut: 195,
+      usos: "maderable, aromático",
+      observaciones: "Aroma característico en corteza",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-06-06",
+      fechaRegistro: "2024-06-06T11:30:00Z"
+    },
+    {
+      id: 10,
+      conglomerado: "CONG-ORI-001",
+      subparcela: "SP-ORI-001-A",
+      nombreCientifico: "Curatella americana",
+      nombresComunes: "Chaparro, yayo",
+      categoria: "Latifoliado",
+      dap: 28.3,
+      altura: 12.5,
+      latitud: 4.143333,
+      longitud: -73.627778,
+      azimut: 300,
+      usos: "leña, medicinal",
+      observaciones: "Típico de sabanas bien drenadas",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-07-13",
+      fechaRegistro: "2024-07-13T12:15:00Z"
+    },
+    {
+      id: 11,
+      conglomerado: "CONG-ORI-001",
+      subparcela: "SP-ORI-001-A",
+      nombreCientifico: "Byrsonima crassifolia",
+      nombresComunes: "Chaparro manteca, nance",
+      categoria: "Latifoliado",
+      dap: 18.7,
+      altura: 8.9,
+      latitud: 4.143333,
+      longitud: -73.627778,
+      azimut: 135,
+      usos: "frutal, medicinal",
+      observaciones: "Frutos verdes presentes",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-07-13",
+      fechaRegistro: "2024-07-13T13:00:00Z"
+    },
+    {
+      id: 12,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-B",
+      nombreCientifico: "Euterpe precatoria",
+      nombresComunes: "Açaí, palmiche",
+      categoria: "Palma",
+      dap: 15.2,
+      altura: 22.8,
+      latitud: -4.214167,
+      longitud: -69.939444,
+      azimut: 60,
+      usos: "alimenticio, artesanal",
+      observaciones: "Racimos de frutos maduros",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-03-17",
+      fechaRegistro: "2024-03-17T08:45:00Z"
+    }
+  ],
+
+  // Método para inicializar datos en el State
+  initializeData() {
+    // Cargar datos en el State si no existen
+    if (State.data.conglomerados.length === 0) {
+      State.data.conglomerados = this.conglomerados;
+    }
+    
+    if (State.data.subparcelas.length === 0) {
+      State.data.subparcelas = this.subparcelas;
+    }
+    
+    if (State.data.arboles.length === 0) {
+      State.data.arboles = this.arboles;
+    }
+    
+    // Guardar en localStorage
+    saveToStorage();
+  },
+
+  // Método para generar datos de prueba adicionales
+  generateSampleData(count = 50) {
+    const especies = [
+      { cientifico: "Ocotea caparrapi", comun: "Laurel" },
+      { cientifico: "Aniba perutilis", comun: "Comino" },
+      { cientifico: "Copaifera officinalis", comun: "Aceite" },
+      { cientifico: "Hura crepitans", comun: "Ceiba amarilla" },
+      { cientifico: "Ficus insipida", comun: "Ojé" },
+      { cientifico: "Spondias mombin", comun: "Jobo" },
+      { cientifico: "Brosimum utile", comun: "Sandé" },
+      { cientifico: "Virola sebifera", comun: "Cumala" },
+      { cientifico: "Caryocar nuciferum", comun: "Almendro" },
+      { cientifico: "Astrocaryum chambira", comun: "Chambira" }
+    ];
+
+    const conglomerados = this.conglomerados;
+    const subparcelas = this.subparcelas;
+
+    for (let i = 0; i < count; i++) {
+      const congIndex = Math.floor(Math.random() * conglomerados.length);
+      const spIndex = Math.floor(Math.random() * subparcelas.length);
+      const especieIndex = Math.floor(Math.random() * especies.length);
+      
+      const fecha = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+      const fechaStr = fecha.toISOString().split('T')[0];
+      
+      const arbol = {
+        id: this.arboles.length + i + 1,
+        conglomerado: conglomerados[congIndex].codigo,
+        subparcela: subparcelas[spIndex].codigo,
+        nombreCientifico: especies[especieIndex].cientifico,
+        nombresComunes: especies[especieIndex].comun,
+        categoria: "Latifoliado",
+        dap: parseFloat((Math.random() * 40 + 10).toFixed(1)),
+        altura: parseFloat((Math.random() * 25 + 8).toFixed(1)),
+        latitud: subparcelas[spIndex].latitud + (Math.random() * 0.002 - 0.001),
+        longitud: subparcelas[spIndex].longitud + (Math.random() * 0.002 - 0.001),
+        azimut: Math.floor(Math.random() * 360),
+        usos: "maderable, " + (Math.random() > 0.5 ? "medicinal" : "ornamental"),
+        observaciones: "Registro automático de prueba",
+        estado: Math.random() > 0.3 ? "validado" : "pendiente_validacion",
+        validadoPor: Math.random() > 0.3 ? (Math.random() > 0.5 ? "Botanico" : "Coordinador") : "",
+        fecha: fechaStr,
+        fechaRegistro: fecha.toISOString()
+      };
+
+      this.arboles.push(arbol);
+    }
+
+    // Actualizar State y localStorage
+    State.data.arboles = this.arboles;
+    saveToStorage();
+    
+    return this.arboles.length;
+  },
+
+  // Método para limpiar datos de prueba
+  clearSampleData() {
+    this.arboles = this.arboles.slice(0, 12); // Mantener solo los registros originales
+    State.data.arboles = this.arboles;
+    saveToStorage();
+  },
+
+  // Método para obtener estadísticas
+  getStatistics() {
+    const totalArboles = this.arboles.length;
+    const validados = this.arboles.filter(a => a.estado === 'validado').length;
+    const pendientes = this.arboles.filter(a => a.estado === 'pendiente_validacion').length;
+    
+    const especiesUnicas = [...new Set(this.arboles.map(a => a.nombreCientifico))].length;
+    
+    const dapPromedio = this.arboles.reduce((sum, a) => sum + a.dap, 0) / totalArboles;
+    const alturaPromedio = this.arboles.reduce((sum, a) => sum + a.altura, 0) / totalArboles;
+    
+    return {
+      totalArboles,
+      validados,
+      pendientes,
+      especiesUnicas,
+      dapPromedio: dapPromedio.toFixed(1),
+      alturaPromedio: alturaPromedio.toFixed(1),
+      conglomeradosActivos: this.conglomerados.length,
+      subparcelasActivas: this.subparcelas.length
+    };
+  }
+};
+
+// Cargar datos del localStorage al iniciar
+function loadFromStorage() {
+  try {
+    const saved = localStorage.getItem('ifn_data');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      State.data.conglomerados = parsed.conglomerados || [];
+      State.data.subparcelas = parsed.subparcelas || [];
+      State.data.arboles = parsed.arboles || [];
+    } else {
+      // Si no hay datos guardados, inicializar con datos de prueba
+      Database.initializeData();
+    }
+    
+    // Cargar borradores
+    const borradores = localStorage.getItem('ifn_borradores');
+    if (borradores) {
+      State.borradores = {...State.borradores, ...JSON.parse(borradores)};
+    }
+
+    // Cargar usuario de sesión si existe
+    const userSession = localStorage.getItem('ifn_user_session');
+    if (userSession) {
+      State.user = JSON.parse(userSession);
+    }
+  } catch (e) {
+    console.warn('Error cargando datos del localStorage:', e);
+    // En caso de error, inicializar con datos de prueba
+    Database.initializeData();
+  }
+}
+
+// Guardar datos en localStorage
+function saveToStorage() {
+  try {
+    localStorage.setItem('ifn_data', JSON.stringify(State.data));
+  } catch (e) {
+    console.warn('Error guardando datos en localStorage:', e);
+  }
+}
+
+// Guardar borradores en localStorage
+function saveBorradores() {
+  try {
+    localStorage.setItem('ifn_borradores', JSON.stringify(State.borradores));
+  } catch (e) {
+    console.warn('Error guardando borradores:', e);
+  }
+}
+
+// Guardar sesión de usuario
+function saveUserSession() {
+  try {
+    if (State.user) {
+      localStorage.setItem('ifn_user_session', JSON.stringify(State.user));
+    } else {
+      localStorage.removeItem('ifn_user_session');
+    }
+  } catch (e) {
+    console.warn('Error guardando sesión de usuario:', e);
+  }
+}
+
+// Sistema de auto-guardado para formularios
+function setupAutosave(formId, borradorKey) {
+  const form = document.getElementById(formId);
+  if (!form) return;
+
+  // Cargar borrador existente
+  if (State.borradores[borradorKey]) {
+    loadFormData(form, State.borradores[borradorKey]);
+    showToast('Borrador cargado automáticamente', 'info', 2000);
+  }
+
+  // Configurar auto-guardado en cada cambio
+  const inputs = form.querySelectorAll('input, select, textarea');
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      // Cancelar timeout anterior
+      if (State.autosaveTimeouts[borradorKey]) {
+        clearTimeout(State.autosaveTimeouts[borradorKey]);
+      }
+
+      // Mostrar estado "guardando..."
+      updateAutosaveStatus(borradorKey, 'saving');
+
+      // Nuevo timeout para guardar después de 1 segundo de inactividad
+      State.autosaveTimeouts[borradorKey] = setTimeout(() => {
+        const formData = getFormData(form);
+        State.borradores[borradorKey] = {
+          data: formData,
+          timestamp: new Date().toISOString(),
+          form: borradorKey
+        };
+        saveBorradores();
+        updateAutosaveStatus(borradorKey, 'saved');
+      }, 1000);
+    });
+  });
+}
+
+// Obtener datos del formulario
+function getFormData(form) {
+  const formData = new FormData(form);
+  const data = {};
+  for (let [key, value] of formData.entries()) {
+    data[key] = value;
+  }
+  return data;
+}
+
+// Cargar datos en formulario
+function loadFormData(form, borrador) {
+  if (!borrador || !borrador.data) return;
+  
+  Object.keys(borrador.data).forEach(key => {
+    const element = form.elements[key];
+    if (element) {
+      element.value = borrador.data[key];
+      
+      // Disparar evento change para selectores dependientes
+      if (element.tagName === 'SELECT') {
+        element.dispatchEvent(new Event('change'));
+      }
+    }
+  });
+}
+
+// Actualizar estado del auto-guardado
+function updateAutosaveStatus(formType, status) {
+  const statusElement = document.getElementById(`autosaveStatus${formType.charAt(0).toUpperCase() + formType.slice(1)}`);
+  if (!statusElement) return;
+
+  statusElement.className = `autosave-status autosave-${status}`;
+  statusElement.classList.remove('d-none');
+  
+  switch(status) {
+    case 'saving':
+      statusElement.textContent = 'Guardando...';
+      statusElement.title = 'Guardando cambios automáticamente';
+      break;
+    case 'saved':
+      statusElement.textContent = 'Auto-guardado';
+      statusElement.title = `Último guardado: ${new Date().toLocaleTimeString()}`;
+      break;
+    case 'error':
+      statusElement.textContent = 'Error al guardar';
+      statusElement.title = 'Error al guardar el borrador';
+      break;
+  }
+}
+
+// UTILS mejoradas
+const qs = (s)=>document.querySelector(s);
+const qsa = (s)=>Array.from(document.querySelectorAll(s));
+function hideAll(){ qsa('.view').forEach(v=>v.classList.add('d-none')) }
+function fillSelect(sel, items, map){
+  const el = typeof sel==='string' ? qs(sel) : sel;
+  if (!el) return;
+  el.innerHTML = '<option value="">Seleccione…</option>' + items.map(map).join('');
+}
+function toNum(s){ 
+  const n = parseFloat(s); 
+  return isFinite(n) ? n : null;
+}
+function alertBox(type, text){ return `<div class="alert alert-${type} mb-2" role="alert">${text}</div>`; }
+function download(filename, text){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], {type:'text/csv;charset=utf-8;'}));
+  a.download = filename; 
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+// Validación de coordenadas mejorada
+function isValidCoordinate(lat, lng) {
+  return lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+}
+
+// Validación de fecha
+function isValidDate(dateString) {
+  const date = new Date(dateString);
+  return date instanceof Date && !isNaN(date) && date <= new Date();
+}
+
+// Validación de nombre científico (formato Género especie) - ahora opcional
+function isValidScientificName(name) {
+  if (!name || name.trim() === '') return false;
+  const sciName = name.trim();
+  // Formato básico: Género especie (opcional subespecie/variedad)
+  // Ahora es más permisivo para permitir validación manual
+  return /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){0,2}$/.test(sciName);
+}
+
+// APP mejorada con sistema de borradores y autenticación
+const App = {
+  init() {
+    loadFromStorage();
+    this.setupEventListeners();
+    this.setupFileInputs();
+    this.setupLoginListeners();
+    this.go('landing');
+  },
+
+  setupEventListeners() {
+    // Mejorar validación de formularios
+    qsa('form').forEach(form => {
+      form.addEventListener('submit', (e) => {
+        if (!form.checkValidity()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        form.classList.add('was-validated');
+      });
+    });
+  },
+
+  setupLoginListeners() {
+    // Configurar toggle de visibilidad de contraseña
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('loginPassword');
+    
+    if (togglePassword && passwordInput) {
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+      });
+    }
+  },
+
+  setupFileInputs() {
+    // Configurar inputs de archivo para mostrar lista
+    qsa('input[type="file"]').forEach(input => {
+      input.addEventListener('change', function(e) {
+        const fileList = document.getElementById('fileList' + this.name.charAt(0).toUpperCase() + this.name.slice(1));
+        if (fileList) {
+          fileList.innerHTML = '';
+          Array.from(this.files).forEach((file, index) => {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.innerHTML = `
+              <div class="d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-file-earmark me-2"></i>${file.name}</span>
+                <button type="button" class="btn btn-sm btn-outline-danger" onclick="App.removeFile(this, ${index})">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            `;
+            fileList.appendChild(fileItem);
+          });
+        }
+      });
+    });
+  },
+
+  removeFile(button, index) {
+    const fileInput = button.closest('form').querySelector('input[type="file"]');
+    const files = Array.from(fileInput.files);
+    files.splice(index, 1);
+    
+    // Crear nuevo DataTransfer y reemplazar files
+    const dt = new DataTransfer();
+    files.forEach(file => dt.items.add(file));
+    fileInput.files = dt.files;
+    
+    // Disparar evento change para actualizar lista
+    fileInput.dispatchEvent(new Event('change'));
+  },
+
+  // Nuevo método para manejar login con credenciales
+  handleLogin(ev) {
+    ev.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const messageEl = document.getElementById('loginMessage');
+    
+    // Validaciones básicas
+    if (!email || !password) {
+      this.showLoginError('Por favor ingrese email y contraseña');
+      return;
+    }
+    
+    // Validar formato de email
+    if (!this.isValidEmail(email)) {
+      this.showLoginError('Por favor ingrese un email válido');
+      return;
+    }
+    
+    // Autenticar usuario
+    const usuario = UsersDB.validarCredenciales(email, password);
+    
+    if (usuario) {
+      this.loginSuccess(usuario);
+    } else {
+      this.showLoginError('Credenciales incorrectas. Verifique su email y contraseña.');
+    }
+  },
+
+  // Método para llenar credenciales automáticamente
+  fillCredentials(email, password) {
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+    document.getElementById('loginMessage').classList.add('d-none');
+    
+    showToast(`Credenciales de ${email.split('@')[0]} cargadas`, 'info', 2000);
+  },
+
+  // Validar formato de email
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
+  // Mostrar error en login
+  showLoginError(message) {
+    const messageEl = document.getElementById('loginMessage');
+    messageEl.textContent = message;
+    messageEl.classList.remove('d-none');
+    
+    // Agregar animación de shake
+    messageEl.classList.add('shake');
+    setTimeout(() => {
+      messageEl.classList.remove('shake');
+    }, 500);
+  },
+
+  // Login exitoso
+  loginSuccess(usuario) {
+    State.user = usuario;
+    saveUserSession();
+    
+    document.getElementById('loginMessage').classList.add('d-none');
+    showToast(`Bienvenido/a, ${usuario.nombre}`, 'success');
+    
+    this.go('dashboard');
+    
+    // Actualizar navegación y botones de auth
+    this.actualizarNavegacion();
+    this.actualizarBotonesAuth();
+  },
+
+  go(view){
+    State.route = view; 
+    hideAll();
+    
+    const views = {
+      'landing':'#view-landing',
+      'login':'#view-login',
+      'dashboard':'#view-dashboard',
+      'gestionUsuarios':'#view-gestionUsuarios',
+      'conglomerado':'#view-conglomerado',
+      'subparcela':'#view-subparcela',
+      'arbol':'#view-arbol',
+      'validacion':'#view-validacion',
+      'reportes':'#view-reportes',
+      'mapa':'#view-mapa'
+    };
+    
+    const id = views[view];
+    if(id) {
+      const element = qs(id);
+      if (element) {
+        element.classList.remove('d-none');
+      }
+    }
+
+    // Actualizar navegación según rol
+    this.actualizarNavegacion();
+
+    switch(view){
+      case 'login':
+        // Limpiar formulario de login al entrar
+        const loginForm = document.getElementById('formLogin');
+        if (loginForm) {
+          loginForm.reset();
+          loginForm.classList.remove('was-validated');
+        }
+        document.getElementById('loginMessage').classList.add('d-none');
+        break;
+        
+      case 'dashboard':
+        qs('#userRole').textContent = State.user?.role || '';
+        qs('#userEmail').textContent = State.user?.email || '';
+        // Mostrar/ocultar secciones según rol
+        qs('#cardsAdministrador').classList.toggle('d-none', State.user?.role!=='Administrador');
+        qs('#cardsCoordinador').classList.toggle('d-none', State.user?.role!=='Coordinador');
+        qs('#cardsTecnico').classList.toggle('d-none', State.user?.role!=='Tecnico');
+        qs('#cardsBotanico').classList.toggle('d-none', State.user?.role!=='Botanico');
+        
+        // Actualizar botones de login/logout
+        this.actualizarBotonesAuth();
+        this.actualizarBorradoresUI();
+        break;
+        
+      case 'gestionUsuarios':
+        // Validar permisos y cargar gestión de usuarios
+        this.cargarGestionUsuarios();
+        break;
+        
+      case 'conglomerado': 
+        State.activeForm='conglomerado';
+        // Validar permisos para conglomerados
+        this.validarPermiso('Coordinador', 'conglomerado');
+        setTimeout(() => setupAutosave('formConglomerado', 'conglomerado'), 100);
+        break;
+        
+      case 'subparcela': 
+        State.activeForm='subparcela'; 
+        // Validar permisos para subparcelas
+        this.validarPermiso('Coordinador', 'subparcela');
+        fillSelect('#spCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo} — ${c.municipio}</option>`); 
+        setTimeout(() => setupAutosave('formSubparcela', 'subparcela'), 100);
+        break;
+        
+      case 'arbol':
+        // Mostrar información de estado según rol
+        this.mostrarInfoEstadoArbol();
+        fillSelect('#arCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo}</option>`);
+        this.updateSubparcelas();
+        setTimeout(() => setupAutosave('formArbol', 'arbol'), 100);
+        break;
+        
+      case 'validacion': 
+        // Validar permisos para validación
+        this.validarPermiso('Botanico', 'validacion');
+        this.renderPendientes(); 
+        break;
+        
+      case 'reportes': 
+        // Validar permisos para reportes
+        this.validarPermiso('Coordinador', 'reportes');
+        this.renderReportes(); 
+        break;
+        
+      case 'mapa': 
+        setTimeout(()=>this.mapa.init(), 100); 
+        break;
+    }
+  },
+
+  // NUEVO MÉTODO: Cargar gestión de usuarios
+  cargarGestionUsuarios() {
+    const permisoElement = qs('#permisoGestionUsuarios');
+    const contenidoElement = qs('#contenidoGestionUsuarios');
+    
+    if (State.user?.role === 'Administrador') {
+      // Usuario es administrador - mostrar contenido real
+      if (permisoElement) permisoElement.classList.add('d-none');
+      if (contenidoElement) contenidoElement.classList.remove('d-none');
+      
+      // Cargar datos de usuarios
+      this.cargarTablaUsuarios();
+    } else {
+      // Usuario NO es administrador - mostrar mensaje de permiso
+      if (permisoElement) permisoElement.classList.remove('d-none');
+      if (contenidoElement) contenidoElement.classList.add('d-none');
+      showToast('Acceso restringido: Solo el Administrador puede gestionar usuarios', 'warning');
+    }
+  },
+
+  // NUEVO MÉTODO: Cargar tabla de usuarios
+  cargarTablaUsuarios() {
+    const tablaUsuarios = qs('#tablaUsuarios');
+    const totalUsuarios = qs('#totalUsuarios');
+    
+    if (!tablaUsuarios || !totalUsuarios) return;
+    
+    const usuarios = UsersDB.obtenerTodosUsuarios();
+    totalUsuarios.textContent = `Total: ${usuarios.length} usuarios`;
+    
+    tablaUsuarios.innerHTML = usuarios.map(usuario => `
+      <tr>
+        <td>${usuario.id}</td>
+        <td>${usuario.nombre}</td>
+        <td>${usuario.email}</td>
+        <td><span class="badge ${this.getBadgeClassForRole(usuario.role)}">${usuario.role}</span></td>
+        <td>
+          <span class="badge ${usuario.activo ? 'bg-success' : 'bg-secondary'}">
+            ${usuario.activo ? 'Activo' : 'Inactivo'}
+          </span>
+        </td>
+        <td>${new Date(usuario.fechaCreacion).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" onclick="App.editarUsuario(${usuario.id})" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-${usuario.activo ? 'warning' : 'success'} ms-1" 
+                  onclick="App.${usuario.activo ? 'desactivar' : 'activar'}Usuario(${usuario.id})" 
+                  title="${usuario.activo ? 'Desactivar' : 'Activar'}">
+            <i class="bi bi-${usuario.activo ? 'person-x' : 'person-check'}"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  // NUEVO MÉTODO: Obtener clase CSS para badge según rol
+  getBadgeClassForRole(role) {
+    const classes = {
+      'Administrador': 'bg-danger',
+      'Coordinador': 'bg-success', 
+      'Tecnico': 'bg-warning',
+      'Botanico': 'bg-info'
+    };
+    return classes[role] || 'bg-secondary';
+  },
+
+  // NUEVO MÉTODO: Mostrar modal para nuevo usuario
+  mostrarModalNuevoUsuario() {
+    showToast('Funcionalidad de nuevo usuario en desarrollo', 'info');
+  },
+
+  // NUEVO MÉTODO: Editar usuario
+  editarUsuario(id) {
+    showToast(`Editar usuario ${id} - En desarrollo`, 'info');
+  },
+
+  // NUEVO MÉTODO: Activar usuario
+  activarUsuario(id) {
+    if (confirm('¿Estás seguro de que quieres activar este usuario?')) {
+      showToast('Usuario activado', 'success');
+      // Aquí iría la lógica real para activar el usuario
+      this.cargarTablaUsuarios(); // Recargar tabla
+    }
+  },
+
+  // NUEVO MÉTODO: Desactivar usuario
+  desactivarUsuario(id) {
+    if (id === State.user?.id) {
+      showToast('No puedes desactivar tu propio usuario', 'warning');
+      return;
+    }
+    
+    if (confirm('¿Estás seguro de que quieres desactivar este usuario?')) {
+      showToast('Usuario desactivado', 'success');
+      // Aquí iría la lógica real para desactivar el usuario
+      this.cargarTablaUsuarios(); // Recargar tabla
+    }
+  },
+
+  // Actualizar navegación según rol del usuario
+  actualizarNavegacion() {
+    const userRole = State.user?.role;
+    
+    // Ocultar todos los elementos de navegación primero
+    qsa('[data-role-visible]').forEach(el => {
+      el.classList.add('d-none');
+    });
+    
+    // Mostrar elementos según el rol
+    if (userRole) {
+      qsa(`[data-role-visible*="${userRole}"]`).forEach(el => {
+        el.classList.remove('d-none');
+      });
+    }
+  },
+
+  // Actualizar botones de autenticación
+  actualizarBotonesAuth() {
+    const btnLogin = qs('#btnLogin');
+    const btnLogout = qs('#btnLogout');
+    
+    if (State.user) {
+      btnLogin?.classList.add('d-none');
+      btnLogout?.classList.remove('d-none');
+    } else {
+      btnLogin?.classList.remove('d-none');
+      btnLogout?.classList.add('d-none');
+    }
+  },
+
+  // Validar permisos para acceder a módulos
+  validarPermiso(rolRequerido, modulo) {
+    if (State.user?.role !== rolRequerido) {
+      const permisoElement = qs(`#permiso${modulo.charAt(0).toUpperCase() + modulo.slice(1)}`);
+      if (permisoElement) {
+        permisoElement.classList.remove('d-none');
+      }
+      showToast(`Acceso restringido: Solo ${rolRequerido} puede acceder a este módulo`, 'warning');
+      return false;
+    }
+    return true;
+  },
+
+  // Mostrar información de estado del árbol según rol
+  mostrarInfoEstadoArbol() {
+    const infoElement = qs('#infoEstadoArbol');
+    const textoElement = qs('#textoEstadoArbol');
+    
+    if (!infoElement || !textoElement) return;
+    
+    if (State.user?.role === 'Tecnico') {
+      infoElement.classList.remove('d-none');
+      textoElement.textContent = 'El árbol se registrará como PENDIENTE de validación. El botánico deberá confirmar la identidad científica.';
+    } else if (State.user?.role === 'Botanico') {
+      infoElement.classList.remove('d-none');
+      textoElement.textContent = 'El árbol se registrará como VALIDADO inmediatamente. Asegúrese de conocer correctamente la identidad científica.';
+    } else {
+      infoElement.classList.add('d-none');
+    }
+  },
+
+  // Actualizar UI de borradores en el dashboard
+  actualizarBorradoresUI() {
+    const borradoresSection = qs('#borradoresSection');
+    const borradoresCount = qs('#borradoresCount');
+    const listaBorradores = qs('#listaBorradores');
+    
+    if (!borradoresSection || !borradoresCount || !listaBorradores) return;
+    
+    const borradoresActivos = Object.values(State.borradores).filter(b => b !== null && b.data);
+    const tieneBorradores = borradoresActivos.length > 0;
+    
+    // Mostrar/ocultar sección
+    borradoresSection.classList.toggle('d-none', !tieneBorradores || !State.user);
+    
+    if (tieneBorradores) {
+      borradoresCount.textContent = borradoresActivos.length;
+      
+      // Listar borradores
+      listaBorradores.innerHTML = borradoresActivos.map(borrador => `
+        <div class="draft-item p-2 mb-2 rounded border">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>${this.getBorradorTitulo(borrador.form)}</strong>
+              <small class="text-muted d-block">Guardado: ${new Date(borrador.timestamp).toLocaleString()}</small>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-outline-primary me-1" onclick="App.cargarBorrador('${borrador.form}')">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" onclick="App.eliminarBorrador('${borrador.form}')">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+  },
+
+  getBorradorTitulo(tipo) {
+    const titulos = {
+      'subparcela': 'Subparcela',
+      'arbol': 'Árbol',
+      'conglomerado': 'Conglomerado'
+    };
+    return titulos[tipo] || 'Formulario';
+  },
+
+  cargarBorrador(tipo) {
+    const vistas = {
+      'subparcela': 'subparcela',
+      'arbol': 'arbol',
+      'conglomerado': 'conglomerado'
+    };
+    
+    this.go(vistas[tipo]);
+    showToast('Borrador cargado', 'info');
+  },
+
+  eliminarBorrador(tipo) {
+    if (confirm('¿Estás seguro de que quieres eliminar este borrador?')) {
+      State.borradores[tipo] = null;
+      saveBorradores();
+      this.actualizarBorradoresUI();
+      showToast('Borrador eliminado', 'success');
+    }
+  },
+
+  limpiarBorrador(tipo) {
+    if (confirm('¿Estás seguro de que quieres limpiar este borrador? Se perderán todos los datos no guardados.')) {
+      State.borradores[tipo] = null;
+      saveBorradores();
+      
+      // Limpiar formulario
+      const formId = `form${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
+      const form = qs(`#${formId}`);
+      if (form) form.reset();
+      
+      updateAutosaveStatus(tipo, 'saved');
+      this.actualizarBorradoresUI();
+      showToast('Borrador limpiado', 'success');
+    }
+  },
+
+  updateSubparcelas(conglomerado = null) {
+    const congSelect = qs('#arCong');
+    const subSelect = qs('#arSub');
+    
+    if (!congSelect || !subSelect) return;
+    
+    const selectedCong = conglomerado || congSelect.value;
+    const subparcelasFiltradas = selectedCong ? 
+      State.data.subparcelas.filter(s => s.conglomerado === selectedCong) : 
+      State.data.subparcelas;
+      
+    fillSelect(subSelect, subparcelasFiltradas, s=>`<option value="${s.codigo}">${s.codigo}</option>`);
+  },
+
+  // Método de login antiguo (para compatibilidad)
+  login(role){ 
+    // Buscar un usuario con ese rol para mantener compatibilidad
+    const usuario = UsersDB.usuarios.find(u => u.role === role && u.activo);
+    if (usuario) {
+      this.loginSuccess({
+        id: usuario.id,
+        email: usuario.email,
+        role: usuario.role,
+        nombre: usuario.nombre
+      });
+    } else {
+      showToast(`No se encontró usuario para el rol: ${role}`, 'warning');
+    }
+  },
+
+  logout(){ 
+    State.user = null; 
+    saveUserSession();
+    this.go('landing'); 
+    showToast('Sesión cerrada', 'secondary'); 
+    
+    // Actualizar navegación y botones de auth
+    this.actualizarNavegacion();
+    this.actualizarBotonesAuth();
+  },
+
+  saveConglomerado(ev){
+    ev.preventDefault();
+    
+    // Validar permisos
+    if (!this.validarPermiso('Coordinador', 'conglomerado')) return;
+    
+    const form = ev.target;
+    const fd = new FormData(form);
+    const obj = Object.fromEntries(fd.entries());
+    const msgEl = qs('#msgCong');
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+
+    // Validaciones adicionales
+    const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
+    if(!isValidCoordinate(lat, lng)){
+      msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas. Latitud debe estar entre -90 y 90, Longitud entre -180 y 180.');
+      return;
+    }
+
+    if(!isValidDate(obj.fecha)){
+      msgEl.innerHTML = alertBox('danger', 'Fecha inválida. No puede ser futura.');
+      return;
+    }
+
+    if(State.data.conglomerados.some(c=>c.codigo===obj.codigo)){
+      msgEl.innerHTML = alertBox('danger', 'El código del conglomerado ya existe.'); 
+      return;
+    }
+
+    State.data.conglomerados.push({ 
+      id: Date.now(), 
+      ...obj, 
+      estado:'registrado',
+      fechaCreacion: new Date().toISOString(),
+      adjuntos: form.adjuntos?.files ? Array.from(form.adjuntos.files).map(f => f.name) : []
+    });
+    
+    // Limpiar borrador después de guardar exitosamente
+    State.borradores.conglomerado = null;
+    saveBorradores();
+    saveToStorage();
+    
+    msgEl.innerHTML = alertBox('success', 'Conglomerado registrado exitosamente');
+    showToast('Conglomerado guardado', 'success');
+    form.reset();
+    form.classList.remove('was-validated');
+    
+    if(State.mapReady){
+      this.mapa.addMarker([lat, lng], `${obj.codigo} — ${obj.municipio}`, 'conglomerado');
+      this.mapa.fit();
+    }
+    
+    this.actualizarBorradoresUI();
+  },
+
+  saveSubparcela(ev){
+    ev.preventDefault();
+    
+    // Validar permisos
+    if (!this.validarPermiso('Coordinador', 'subparcela')) return;
+    
+    const form = ev.target;
+    const fd = new FormData(form);
+    const obj = Object.fromEntries(fd.entries());
+    const msgEl = qs('#msgSub');
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+
+    if(!State.data.conglomerados.some(c=>c.codigo===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.'); 
+      return;
+    }
+
+    const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
+    if(!isValidCoordinate(lat, lng)){
+      msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas.');
+      return;
+    }
+
+    if(State.data.subparcelas.some(s=>s.codigo===obj.codigo && s.conglomerado===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'El código de la subparcela ya existe en ese conglomerado.'); 
+      return;
+    }
+
+    State.data.subparcelas.push({ 
+      id: Date.now(), 
+      ...obj, 
+      estado:'registrado',
+      fechaCreacion: new Date().toISOString()
+    });
+    
+    // Limpiar borrador después de guardar exitosamente
+    State.borradores.subparcela = null;
+    saveBorradores();
+    saveToStorage();
+    
+    msgEl.innerHTML = alertBox('success', 'Subparcela registrada exitosamente');
+    showToast('Subparcela guardada', 'success');
+    form.reset();
+    form.classList.remove('was-validated');
+    
+    if(State.mapReady){
+      this.mapa.addMarker([lat, lng], `${obj.codigo} (SP)`, 'subparcela');
+      this.mapa.fit();
+    }
+    
+    this.actualizarBorradoresUI();
+  },
+
+  saveArbol(ev){
+    ev.preventDefault();
+    const form = ev.target;
+    const fd = new FormData(form);
+    const obj = Object.fromEntries(fd.entries());
+    const msgEl = qs('#msgArb');
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+
+    if(!State.data.conglomerados.some(c=>c.codigo===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.'); 
+      return;
+    }
+
+    if(!State.data.subparcelas.some(s=>s.codigo===obj.subparcela && s.conglomerado===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'Subparcela no encontrada en el conglomerado seleccionado.'); 
+      return;
+    }
+
+    // Validar nombre científico (ahora opcional para permitir validación manual)
+    const sci = obj.nombreCientifico.trim();
+    if (sci && !isValidScientificName(sci)) {
+      msgEl.innerHTML = alertBox('warning', 'Formato de nombre científico podría ser incorrecto. Use: Género especie (ej: Quercus humboldtii). Puede continuar para validación manual.');
+      // No return aquí - permitir continuar para validación manual
+    }
+
+    // Determinar estado según el actor (Técnico → Pendiente, Botánico → Validado)
+    const estado = State.user?.role === 'Botanico' ? 'validado' : 'pendiente_validacion';
+    const validadoPor = estado === 'validado' ? State.user.role : '';
+
+    State.data.arboles.push({ 
+      id: Date.now(), 
+      ...obj, 
+      nombreCientifico: sci, 
+      estado, 
+      validadoPor, 
+      fecha: new Date().toISOString().slice(0,10),
+      fechaRegistro: new Date().toISOString(),
+      evidencias: form.evidencias?.files ? Array.from(form.evidencias.files).map(f => f.name) : []
+    });
+    
+    // Limpiar borrador después de guardar exitosamente
+    State.borradores.arbol = null;
+    saveBorradores();
+    saveToStorage();
+    
+    const estadoMsg = estado === 'validado' ? 'validado' : 'registrado (pendiente de validación)';
+    msgEl.innerHTML = alertBox('success', `Árbol ${estadoMsg} exitosamente`);
+    showToast(`Árbol ${estadoMsg}`, 'success');
+    form.reset();
+    form.classList.remove('was-validated');
+    
+    this.actualizarBorradoresUI();
+  },
+
+  renderPendientes(){
+    const tb = qs('#tablaPendientes tbody');
+    if (!tb) return;
+    
+    const pend = State.data.arboles.filter(a=>a.estado==='pendiente_validacion');
+    tb.innerHTML = pend.length ? pend.map(a=>`
+      <tr>
+        <td>${a.id}</td>
+        <td>${a.conglomerado}</td>
+        <td>${a.subparcela}</td>
+        <td><em class="nombre-cientifico">${a.nombreCientifico}</em></td>
+        <td><span class="badge estado-pendiente">Pendiente</span></td>
+        <td>${a.fecha}</td>
+        <td>
+          <button class="btn btn-sm btn-success rounded-pill" onclick="App.validar(${a.id})">
+            <i class="bi bi-check-lg me-1"></i>Validar
+          </button>
+          <button class="btn btn-sm btn-outline-primary rounded-pill ms-1" onclick="App.editarArbol(${a.id})">
+            <i class="bi bi-pencil"></i>
+          </button>
+        </td>
+      </tr>`).join('') 
+      : `<tr><td colspan="7" class="text-center text-muted py-3">No hay registros pendientes de validación.</td></tr>`;
+  },
+
+  editarArbol(id) {
+    const arbol = State.data.arboles.find(a => a.id === id);
+    if (!arbol) return;
+    
+    // Llenar formulario de árbol con datos existentes
+    this.go('arbol');
+    setTimeout(() => {
+      const form = qs('#formArbol');
+      if (form) {
+        Object.keys(arbol).forEach(key => {
+          const element = form.elements[key];
+          if (element) {
+            element.value = arbol[key];
+          }
+        });
+        showToast('Árbol cargado para edición', 'info');
+      }
+    }, 100);
+  },
+
+  validar(id){
+    if(!(State.user?.role==='Botanico')){ 
+      showToast('Solo el Botánico puede realizar validación taxonómica', 'warning'); 
+      return; 
+    }
+    
+    const arbol = State.data.arboles.find(a => a.id === id);
+    if (!arbol) return;
+    
+    // Mostrar modal de validación con opción para corregir nombre científico
+    this.mostrarModalValidacion(arbol);
+  },
+
+  mostrarModalValidacion(arbol) {
+    const modalHTML = `
+      <div class="modal fade" id="modalValidacion" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Validar Árbol</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>ID:</strong> ${arbol.id}</p>
+              <p><strong>Conglomerado:</strong> ${arbol.conglomerado}</p>
+              <p><strong>Subparcela:</strong> ${arbol.subparcela}</p>
+              
+              <div class="mb-3">
+                <label class="form-label"><strong>Nombre científico:</strong></label>
+                <input type="text" class="form-control" id="nombreCientificoValidado" value="${arbol.nombreCientifico}" placeholder="Corrija el nombre científico si es necesario">
+                <div class="form-text">Puede corregir el nombre científico durante la validación</div>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label"><strong>Observaciones de validación:</strong></label>
+                <textarea class="form-control" id="observacionesValidacion" rows="3" placeholder="Agregue observaciones sobre la validación taxonómica"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-success" onclick="App.confirmarValidacion(${arbol.id})">
+                <i class="bi bi-check-lg me-1"></i>Confirmar Validación
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Crear modal dinámicamente
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalValidacion'));
+    modal.show();
+    
+    // Limpiar después de cerrar
+    document.getElementById('modalValidacion').addEventListener('hidden.bs.modal', function () {
+      modalContainer.remove();
+    });
+  },
+
+  confirmarValidacion(id) {
+    const nombreCientificoValidado = document.getElementById('nombreCientificoValidado').value;
+    const observacionesValidacion = document.getElementById('observacionesValidacion').value;
+    
+    if (!nombreCientificoValidado.trim()) {
+      showToast('El nombre científico es requerido', 'warning');
+      return;
+    }
+    
+    State.data.arboles = State.data.arboles.map(a=>
+      a.id===id ? {
+        ...a, 
+        estado:'validado', 
+        validadoPor: State.user.role,
+        nombreCientifico: nombreCientificoValidado,
+        observaciones: a.observaciones + (observacionesValidacion ? ` | Validación: ${observacionesValidacion}` : '')
+      } : a
+    );
+    
+    saveToStorage();
+    this.renderPendientes(); 
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
+    modal.hide();
+    
+    showToast('Registro validado exitosamente', 'success');
+  },
+
+  renderReportes(){
+    const fFechaDesde = qs('#fFechaDesde').value;
+    const fFechaHasta = qs('#fFechaHasta').value;
+    const fZona = qs('#fZona').value.trim().toLowerCase();
+    const fEspecie = qs('#fEspecie').value.trim().toLowerCase();
+    const fTecnico = qs('#fTecnico').value.trim().toLowerCase();
+    const fEstado = qs('#fEstado').value;
+    
+    let rows = State.data.arboles;
+    
+    // Aplicar filtros según caso de uso
+    if (fFechaDesde) {
+      rows = rows.filter(a => a.fecha >= fFechaDesde);
+    }
+    if (fFechaHasta) {
+      rows = rows.filter(a => a.fecha <= fFechaHasta);
+    }
+    if (fZona) {
+      rows = rows.filter(a => 
+        a.conglomerado.toLowerCase().includes(fZona) ||
+        (State.data.conglomerados.find(c => c.codigo === a.conglomerado)?.municipio?.toLowerCase() || '').includes(fZona)
+      );
+    }
+    if (fEspecie) {
+      rows = rows.filter(a => a.nombreCientifico.toLowerCase().includes(fEspecie));
+    }
+    if (fTecnico) {
+      rows = rows.filter(a => a.validadoPor?.toLowerCase().includes(fTecnico));
+    }
+    if (fEstado) {
+      rows = rows.filter(a => a.estado === fEstado);
+    }
+    
+    const tb = qs('#tablaReportes tbody');
+    const sinResultados = qs('#sinResultados');
+    const contador = qs('#contadorResultados');
+    
+    if (!tb || !sinResultados || !contador) return;
+    
+    // Mostrar/ocultar mensaje de no resultados
+    sinResultados.classList.toggle('d-none', rows.length > 0);
+    contador.textContent = `${rows.length} registros`;
+    
+    tb.innerHTML = rows.length ? rows.map(a=>{
+      const conglomerado = State.data.conglomerados.find(c => c.codigo === a.conglomerado);
+      return `
+      <tr>
+        <td>${a.id}</td>
+        <td>${a.conglomerado}${conglomerado ? `<br><small>${conglomerado.municipio}</small>` : ''}</td>
+        <td>${a.subparcela}</td>
+        <td><em class="nombre-cientifico">${a.nombreCientifico}</em></td>
+        <td>
+          <span class="badge ${a.estado==='validado' ? 'estado-validado' : 'estado-pendiente'}">
+            ${a.estado.replace('_', ' ')}
+          </span>
+        </td>
+        <td>${a.validadoPor||'-'}</td>
+        <td>${a.fecha}</td>
+        <td>${a.dap || '-'}</td>
+        <td>${a.altura || '-'}</td>
+      </tr>`;
+    }).join('')
+      : `<tr><td colspan="9" class="text-center text-muted py-3">No hay información para los filtros seleccionados</td></tr>`;
+  },
+
+  limpiarFiltros() {
+    qs('#fFechaDesde').value = '';
+    qs('#fFechaHasta').value = '';
+    qs('#fZona').value = '';
+    qs('#fEspecie').value = '';
+    qs('#fTecnico').value = '';
+    qs('#fEstado').value = '';
+    this.renderReportes();
+    showToast('Filtros limpiados', 'info');
+  },
+
+  exportCSV(){
+    const rows = [['ID','Conglomerado','Subparcela','Nombre científico','Estado','Validado por','Fecha','DAP (cm)','Altura (m)']];
+    const tb = qs('#tablaReportes tbody'); 
+    
+    if (!tb) {
+      showToast('No hay datos para exportar', 'warning'); 
+      return;
+    }
+    
+    const trs = Array.from(tb.querySelectorAll('tr'));
+    trs.forEach(tr=>{ 
+      const tds = Array.from(tr.querySelectorAll('td')).map(td=>{
+        let text = td.innerText.replace(/\n/g,' ').replace(/,/g,';');
+        // Remover etiquetas HTML de los badges
+        text = text.replace(/<[^>]*>/g, '').trim();
+        return `"${text}"`;
+      }); 
+      if(tds.length === 9) rows.push(tds); 
+    });
+    
+    if(rows.length <= 1){ 
+      showToast('No hay datos para exportar', 'warning'); 
+      return; 
+    }
+    
+    const csv = rows.map(r=>r.join(',')).join('\n'); 
+    const timestamp = new Date().toISOString().slice(0,10);
+    download(`reporte_ifn_${timestamp}.csv`, csv); 
+    showToast('Reporte CSV exportado exitosamente', 'primary');
+  },
+
+  exportPDF() {
+    showToast('Función de exportación PDF en desarrollo', 'info');
+    // En una implementación real, aquí se integraría con una librería como jsPDF
+  },
+
+  // Nuevos métodos para datos de prueba
+  generarDatosPrueba() {
+    if (confirm('¿Generar 50 registros de árboles de prueba? Esto agregará datos ficticios a la base de datos.')) {
+      const count = Database.generateSampleData(50);
+      showToast(`Se generaron ${count} registros de prueba`, 'success');
+      this.renderReportes();
+    }
+  },
+
+  limpiarDatosPrueba() {
+    if (confirm('¿Eliminar todos los registros de prueba? Se conservarán solo los registros originales.')) {
+      Database.clearSampleData();
+      showToast('Datos de prueba eliminados', 'info');
+      this.renderReportes();
+    }
+  },
+
+  mostrarEstadisticas() {
+    const stats = Database.getStatistics();
+    
+    const modalHTML = `
+      <div class="modal fade" id="statsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bi bi-graph-up me-2"></i>Estadísticas del IFN</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="card border-0 bg-light">
+                    <div class="card-body text-center">
+                      <h3 class="text-primary">${stats.totalArboles}</h3>
+                      <p class="mb-0">Total de árboles registrados</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card border-0 bg-light">
+                    <div class="card-body text-center">
+                      <h3 class="text-success">${stats.especiesUnicas}</h3>
+                      <p class="mb-0">Especies diferentes</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0">
+                    <div class="card-body text-center">
+                      <h6>Validados</h6>
+                      <h4 class="text-success">${stats.validados}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0">
+                    <div class="card-body text-center">
+                      <h6>Pendientes</h6>
+                      <h4 class="text-warning">${stats.pendientes}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0">
+                    <div class="card-body text-center">
+                      <h6>Conglomerados</h6>
+                      <h4 class="text-info">${stats.conglomeradosActivos}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="card border-0">
+                    <div class="card-body">
+                      <h6>Medidas Promedio</h6>
+                      <div class="row text-center">
+                        <div class="col-6">
+                          <strong>DAP:</strong> ${stats.dapPromedio} cm
+                        </div>
+                        <div class="col-6">
+                          <strong>Altura:</strong> ${stats.alturaPromedio} m
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Crear modal dinámicamente
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+    
+    const modal = new bootstrap.Modal(document.getElementById('statsModal'));
+    modal.show();
+    
+    // Limpiar después de cerrar
+    document.getElementById('statsModal').addEventListener('hidden.bs.modal', function () {
+      modalContainer.remove();
+    });
+  },
+
+  mapa: {
+    init(){
+      if(State.mapReady){ 
+        this.refresh(); 
+        return; 
+      }
+      
+      const mapEl = qs('#map');
+      const mapError = qs('#mapError');
+      
+      if (!mapEl) return;
+      
+      // Verificar si Leaflet está cargado
+      if (typeof L === 'undefined') {
+        mapError.classList.remove('d-none');
+        mapEl.style.display = 'none';
+        showToast('Error al cargar el mapa', 'danger', 5000);
+        return;
+      }
+      
+      const center = [7.119349, -73.122741];
+      const map = L.map(mapEl).setView(center, 12); 
+      State.map = map;
+      
+      // Manejar errores de tiles
+      map.on('tileerror', function(e) {
+        console.warn('Error loading tile:', e);
+        mapError.classList.remove('d-none');
+      });
+      
+      try {
+        const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          errorTileUrl: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2IiBoZWlnaHQ9IjI1NiIgdmlld0JveD0iMCAwIDI1NiAyNTYiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIGZpbGw9IiNGM0Y0RjUiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjE0IiBmaWxsPSIjOTk5OTk5IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iMC4zNWVtIj5NYXBhIG5vIGRpc3BvbmlibGU8L3RleHQ+PC9zdmc+'
+        }).addTo(map);
+      } catch (e) {
+        console.error('Error creating map:', e);
+        mapError.classList.remove('d-none');
+        mapEl.style.display = 'none';
+        return;
+      }
+      
+      const markers = L.layerGroup().addTo(map); 
+      State.markers = markers;
+      
+      map.on('click', (e)=>{
+        if(!qs('#chkPick')?.checked) return;
+        
+        const {lat, lng} = e.latlng;
+        
+        if(State.activeForm==='conglomerado'){ 
+          const f = qs('#view-conglomerado form'); 
+          if(f){ 
+            f.latitud.value = lat.toFixed(6); 
+            f.longitud.value = lng.toFixed(6);
+            f.latitud.dispatchEvent(new Event('change'));
+            f.longitud.dispatchEvent(new Event('change'));
+          } 
+        }
+        else if(State.activeForm==='subparcela'){ 
+          const f = qs('#view-subparcela form'); 
+          if(f){ 
+            f.latitud.value = lat.toFixed(6); 
+            f.longitud.value = lng.toFixed(6);
+            f.latitud.dispatchEvent(new Event('change'));
+            f.longitud.dispatchEvent(new Event('change'));
+          } 
+        }
+        else if(State.activeForm==='arbol'){ 
+          const f = qs('#view-arbol form'); 
+          if(f){ 
+            f.latitud.value = lat.toFixed(6); 
+            f.longitud.value = lng.toFixed(6);
+            f.latitud.dispatchEvent(new Event('change'));
+            f.longitud.dispatchEvent(new Event('change'));
+          } 
+        }
+        
+        // Marcador temporal
+        L.circleMarker([lat,lng], {
+          radius: 8,
+          color: '#ff6b35',
+          fillColor: '#ff6b35',
+          fillOpacity: 0.7
+        })
+        .addTo(State.markers)
+        .bindPopup('Punto seleccionado<br>Lat: ' + lat.toFixed(6) + '<br>Lng: ' + lng.toFixed(6))
+        .openPopup();
+      });
+      
+      this.refresh(); 
+      State.mapReady = true;
+      mapError.classList.add('d-none');
+      mapEl.style.display = 'block';
+    },
+    
+    refresh(){
+      if(!State.map || !State.markers) return;
+      
+      State.markers.clearLayers();
+      
+      // Agregar conglomerados
+      State.data.conglomerados.forEach(c=>{
+        const lat = toNum(c.latitud), lng = toNum(c.longitud);
+        if(isFinite(lat) && isFinite(lng) && isValidCoordinate(lat, lng)){
+          const m = L.marker([lat, lng], {
+            title: c.codigo
+          })
+          .bindPopup(`
+            <strong>${c.codigo}</strong><br>
+            ${c.municipio}, ${c.region}<br>
+            <small>${c.fecha}</small>
+          `);
+          State.markers.addLayer(m);
+        }
+      });
+      
+      // Agregar subparcelas
+      State.data.subparcelas.forEach(s=>{
+        const lat = toNum(s.latitud), lng = toNum(s.longitud);
+        if(isFinite(lat) && isFinite(lng) && isValidCoordinate(lat, lng)){
+          const m = L.circleMarker([lat, lng], {
+            radius: 6,
+            color: '#198754',
+            fillColor: '#198754',
+            fillOpacity: 0.7
+          })
+          .bindPopup(`
+            <strong>Subparcela ${s.codigo}</strong><br>
+            Conglomerado: ${s.conglomerado}<br>
+            Estado: ${s.estado}
+          `);
+          State.markers.addLayer(m);
+        }
+      });
+      
+      this.fit();
+    },
+    
+    addMarker(latlng, label, kind='conglomerado'){
+      if(!State.markers) return;
+      
+      const layer = kind==='subparcela' ? 
+        L.circleMarker(latlng, {
+          radius: 6,
+          color: '#198754',
+          fillColor: '#198754',
+          fillOpacity: 0.7
+        }).bindPopup(`<strong>${label}</strong>`) : 
+        L.marker(latlng, {
+          title: label
+        }).bindPopup(`<strong>${label}</strong>`);
+        
+      State.markers.addLayer(layer);
+    },
+    
+    fit(){
+      if (!State.map || !State.markers) return;
+      
+      const layers = State.markers.getLayers();
+      if(!layers.length){ 
+        State.map.setView([7.119349, -73.122741], 12); 
+        return; 
+      }
+      
+      try {
+        const group = L.featureGroup(layers); 
+        State.map.fitBounds(group.getBounds().pad(0.1));
+      } catch (e) {
+        console.warn('Error fitting bounds:', e);
+      }
+    },
+    
+    centerBga(){ 
+      if(State.map) State.map.setView([7.119349, -73.122741], 12); 
+    },
+    
+    clearMarkers() {
+      if (State.markers) {
+        State.markers.clearLayers();
+        showToast('Marcadores limpiados', 'info');
+      }
+    }
+  }
+};
+
+// Boot mejorado
+window.App = App;
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  // --- THEME mejorado ---
+  const btn = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+  
+  function getSystemTheme() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  
+  function getStoredTheme() {
+    return localStorage.getItem('ifn_theme');
+  }
+  
+  function setTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    localStorage.setItem('ifn_theme', theme);
+    updateIcon();
+  }
+  
+  function updateIcon(){
+    const t = document.documentElement.getAttribute('data-bs-theme') || 'light';
+    icon.className = t==='dark' ? 'bi bi-sun' : 'bi bi-moon-stars';
+    const span = btn?.querySelector('span');
+    if(span) span.textContent = t==='dark' ? 'Claro' : 'Oscuro';
+  }
+  
+  // Inicializar tema
+  const storedTheme = getStoredTheme();
+  const systemTheme = getSystemTheme();
+  setTheme(storedTheme || systemTheme);
+  
+  btn?.addEventListener('click', ()=>{
+    const current = document.documentElement.getAttribute('data-bs-theme') || 'light';
+    const next = current==='light' ? 'dark' : 'light';
+    setTheme(next);
+  });
+  
+  // Escuchar cambios del sistema
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!getStoredTheme()) {
+      setTheme(e.matches ? 'dark' : 'light');
+    }
+  });
+  
+
+  // Inicializar la aplicación
+  App.init();
+});
