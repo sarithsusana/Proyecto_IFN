@@ -222,13 +222,11 @@ body{
   object-fit: contain;             /* evita deformaciones si cambias medidas */
   transition: transform .2s ease, box-shadow .2s ease;
 }
-
 /* Efecto sutil al pasar el mouse (opcional) */
 .partner-logo:hover{
   transform: translateY(-2px) scale(1.03);
   box-shadow: 0 8px 22px rgba(0,0,0,.12);
 }
-
 /* ========= Modo oscuro (Bootstrap 5.3 con data-bs-theme="dark") ========= */
 :root[data-bs-theme="dark"]{
   /* Paleta base */
@@ -236,32 +234,26 @@ body{
   --bs-body-color: #e6eaf2;
   --bs-heading-color: #f8fafc;
   --bs-border-color: #2a3342;
-
   /* Superficies */
   --bs-secondary-bg: #0d1523;   /* para .bg-light en dark */
   --bs-tertiary-bg: #0b1320;
   --bs-card-bg: #0f1827;
   --bs-card-border-color: #223048;
-
   /* Links */
   --bs-link-color: #8cd1ff;
   --bs-link-hover-color: #b1e3ff;
-
   /* Texto atenuado */
   --bs-secondary-color: #9aa6b2; /* .text-muted */
 }
-
 /* Secciones que en claro usan .bg-light: que no queden blancas en dark */
 :root[data-bs-theme="dark"] .bg-light {
   background-color: var(--bs-secondary-bg) !important;
 }
-
 /* Navbar "bg-body-tertiary" a tono oscuro */
 :root[data-bs-theme="dark"] .navbar.bg-body-tertiary {
   background-color: var(--bs-body-bg) !important;
   border-color: var(--bs-border-color) !important;
 }
-
 /* Cards, dropdowns, modales, offcanvas, listas, acordeones, toasts */
 :root[data-bs-theme="dark"] .card,
 :root[data-bs-theme="dark"] .dropdown-menu,
@@ -275,7 +267,6 @@ body{
   color: var(--bs-body-color) !important;
   border-color: var(--bs-card-border-color) !important;
 }
-
 /* Botones outline (para que no "brillen" raro en dark) */
 :root[data-bs-theme="dark"] .btn-outline-primary{
   --bs-btn-color: #8cd1ff;
@@ -287,7 +278,6 @@ body{
   --bs-btn-disabled-color: #6a7b90;
   --bs-btn-disabled-border-color: #2a3342;
 }
-
 /* Inputs y selects (evitar fondito blanco) */
 :root[data-bs-theme="dark"] .form-control,
 :root[data-bs-theme="dark"] .form-select,
@@ -300,7 +290,6 @@ body{
 :root[data-bs-theme="dark"] .form-control::placeholder{
   color: #8b94a3 !important;
 }
-
 /* Tablas */
 :root[data-bs-theme="dark"] .table{
   --bs-table-bg: transparent;
@@ -309,7 +298,6 @@ body{
   color: var(--bs-body-color);
   border-color: var(--bs-border-color);
 }
-
 /* Bordes tenues (cuando usas .border o .border-*) */
 :root[data-bs-theme="dark"] .border,
 :root[data-bs-theme="dark"] .border-top,
@@ -318,18 +306,15 @@ body{
 :root[data-bs-theme="dark"] .border-start {
   border-color: var(--bs-border-color) !important;
 }
-
 /* Texto atenuado */
 :root[data-bs-theme="dark"] .text-muted {
   color: var(--bs-secondary-color) !important;
 }
-
 /* Logo de partners: (ya lo tenías) que no se inviertan en dark */
 :root[data-bs-theme="dark"] .partner-logo{
   filter: none !important;
   opacity: 1 !important;
 }
-
 /* Tus estados y mensajes (mantengo tu paleta) */
 :root[data-bs-theme="dark"] .draft-item {
   border-left-color: #ffc107 !important;
@@ -338,18 +323,14 @@ body{
 :root[data-bs-theme="dark"] .estado-pendiente { background-color: #332701; color: #ffc107; }
 :root[data-bs-theme="dark"] .estado-validado { background-color: #052c13; color: #75b798; }
 :root[data-bs-theme="dark"] .map-error { background: #2d0b0e; color: #f1aeb5; }
-
 /* Leaflet: fondo del contenedor para que no quede "lienzo" blanco */
 :root[data-bs-theme="dark"] .leaflet-container {
   background: var(--bs-body-bg) !important;
 }
-
 /* Marca de la navbar (el circulito del logo) */
 :root[data-bs-theme="dark"] .brand-dot{
   background: transparent; /* o usa var(--bs-secondary-bg) si prefieres sólido */
 }
-
-
 /* Footer  */
 footer {
   background: linear-gradient(to bottom, var(--bs-body-bg), color-mix(in oklab, var(--bs-body-bg), black 10%));
@@ -403,7 +384,6 @@ footer .copyright {
 :root[data-bs-theme="dark"] footer .copyright {
   border-top-color: rgba(255,255,255,0.1);
 }
-
 /* Mejoras para formularios */
 .form-control:focus, .form-select:focus {
   border-color: var(--ifn-blue);
@@ -415,13 +395,11 @@ footer .copyright {
 .was-validated .form-control:invalid, .was-validated .form-select:invalid {
   border-color: #dc3545;
 }
-
 /* Badges mejorados */
 .badge {
   font-size: 0.75em;
   padding: 0.35em 0.65em;
 }
-
 /* Adjuntos */
 .file-input-container {
   position: relative;
@@ -452,7 +430,6 @@ footer .copyright {
   background: #1a1a1a;
   border-color: #444;
 }
-
 /* Gradientes para carousel */
 .bg-gradient-primary {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -462,4 +439,395 @@ footer .copyright {
 }
 .bg-gradient-info {
   background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+}
+
+/* ESTILOS NUEVOS PARA PERMISOS Y VALIDACIONES */
+.permiso-alert {
+  border-left: 4px solid #ffc107;
+  background-color: #fffbf0;
+}
+
+:root[data-bs-theme="dark"] .permiso-alert {
+  background-color: #332701;
+  border-left-color: #ffc107;
+}
+
+.info-estado-arbol {
+  border-left: 4px solid #0dcaf0;
+  background-color: #d1ecf1;
+}
+
+:root[data-bs-theme="dark"] .info-estado-arbol {
+  background-color: #052c13;
+  border-left-color: #0dcaf0;
+}
+
+/* Mejoras para navegación por roles */
+.nav-item[data-role-visible] {
+  transition: opacity 0.3s ease;
+}
+
+/* Estados de formulario según permisos */
+.form-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+/* Mejoras para tablas de validación */
+.table-validacion tr:hover {
+  background-color: rgba(13, 110, 253, 0.05);
+}
+
+:root[data-bs-theme="dark"] .table-validacion tr:hover {
+  background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Estilos para dashboard por roles */
+.role-section {
+  transition: all 0.3s ease;
+}
+
+.role-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .feature-icon {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .step-number {
+    width: 40px;
+    height: 40px;
+    font-size: 1.2rem;
+  }
+}
+
+/* Animaciones suaves */
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .card, .btn, .nav-item {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-cta {
+    border: 2px solid currentColor;
+  }
+  
+  .card {
+    border: 2px solid var(--bs-border-color);
+  }
+}
+
+/* ========= ESTILOS PARA SISTEMA DE LOGIN ========= */
+
+/* Animación shake para errores de login */
+.shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+/* Mejoras para el formulario de login */
+.login-card {
+  border: none;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+  backdrop-filter: blur(10px);
+}
+
+:root[data-bs-theme="dark"] .login-card {
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  background: rgba(15, 23, 42, 0.8);
+}
+
+.login-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.login-message {
+  border-radius: 8px;
+  border-left: 4px solid #dc3545;
+}
+
+/* Botones de credenciales rápidas */
+.btn-credential {
+  transition: all 0.2s ease;
+  border: 1px solid #dee2e6;
+  font-size: 0.8rem;
+  padding: 0.4rem 0.8rem;
+}
+
+.btn-credential:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.btn-credential-admin {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.btn-credential-admin:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-credential-coord {
+  border-color: #198754;
+  color: #198754;
+}
+
+.btn-credential-coord:hover {
+  background-color: #198754;
+  color: white;
+}
+
+.btn-credential-tec {
+  border-color: #fd7e14;
+  color: #fd7e14;
+}
+
+.btn-credential-tec:hover {
+  background-color: #fd7e14;
+  color: white;
+}
+
+.btn-credential-bot {
+  border-color: #0dcaf0;
+  color: #0dcaf0;
+}
+
+.btn-credential-bot:hover {
+  background-color: #0dcaf0;
+  color: white;
+}
+
+:root[data-bs-theme="dark"] .btn-credential {
+  border-color: #374151;
+  background-color: rgba(255,255,255,0.05);
+}
+
+:root[data-bs-theme="dark"] .btn-credential:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+
+/* Input groups mejorados para login */
+.login-input-group {
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.login-input-group .input-group-text {
+  background-color: #f8f9fa;
+  border: 1px solid #ced4da;
+  border-right: none;
+  transition: all 0.2s ease;
+}
+
+.login-input-group .form-control {
+  border-left: none;
+  border-right: none;
+}
+
+.login-input-group .form-control:focus {
+  border-color: #86b7fe;
+  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.login-input-group .form-control:focus + .input-group-text {
+  border-color: #86b7fe;
+  background-color: #e7f1ff;
+}
+
+:root[data-bs-theme="dark"] .login-input-group .input-group-text {
+  background-color: #1a1a1a;
+  border-color: #374151;
+  color: #9ca3af;
+}
+
+:root[data-bs-theme="dark"] .login-input-group .form-control:focus + .input-group-text {
+  background-color: #1e293b;
+  border-color: #3b82f6;
+}
+
+/* Botón de toggle password */
+.btn-toggle-password {
+  border: 1px solid #ced4da;
+  border-left: none;
+  background-color: #f8f9fa;
+  transition: all 0.2s ease;
+}
+
+.btn-toggle-password:hover {
+  background-color: #e9ecef;
+  border-color: #adb5bd;
+}
+
+:root[data-bs-theme="dark"] .btn-toggle-password {
+  background-color: #1a1a1a;
+  border-color: #374151;
+  color: #9ca3af;
+}
+
+:root[data-bs-theme="dark"] .btn-toggle-password:hover {
+  background-color: #2d2d2d;
+  border-color: #4b5563;
+}
+
+/* Mejoras para el dashboard de usuario */
+.user-info {
+  font-size: 0.9rem;
+}
+
+.user-email {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+:root[data-bs-theme="dark"] .user-email {
+  color: #9ca3af;
+}
+
+/* Indicadores de rol en dashboard */
+.role-badge {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.role-admin {
+  background: linear-gradient(135deg, #dc3545, #e35d6a);
+}
+
+.role-coord {
+  background: linear-gradient(135deg, #198754, #20c997);
+}
+
+.role-tec {
+  background: linear-gradient(135deg, #fd7e14, #ff922b);
+}
+
+.role-bot {
+  background: linear-gradient(135deg, #0dcaf0, #3dd5f3);
+}
+
+/* Efectos de hover para tarjetas de dashboard */
+.dashboard-card {
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0,0,0,0.08);
+  cursor: pointer;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  border-color: var(--ifn-blue);
+}
+
+:root[data-bs-theme="dark"] .dashboard-card {
+  border-color: rgba(255,255,255,0.1);
+}
+
+:root[data-bs-theme="dark"] .dashboard-card:hover {
+  border-color: var(--ifn-blue);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+}
+
+/* Loading states */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mejoras responsive para login */
+@media (max-width: 576px) {
+  .login-container {
+    padding: 1rem;
+  }
+  
+  .btn-credential {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .user-info {
+    font-size: 0.8rem;
+  }
+}
+
+/* Efectos de transición para cambios de vista */
+.view-transition {
+  animation: viewFadeIn 0.3s ease-in-out;
+}
+
+@keyframes viewFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Estilos para mensajes de bienvenida */
+.welcome-message {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.1), rgba(30, 136, 229, 0.1));
+  border: 1px solid rgba(22, 163, 74, 0.2);
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+:root[data-bs-theme="dark"] .welcome-message {
+  background: linear-gradient(135deg, rgba(22, 163, 74, 0.15), rgba(30, 136, 229, 0.15));
+  border-color: rgba(22, 163, 74, 0.3);
+}
+
+/* Mejoras para inputs en modo oscuro */
+:root[data-bs-theme="dark"] .form-control:focus {
+  background-color: #0d1523;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+}
+
+:root[data-bs-theme="dark"] .form-select:focus {
+  background-color: #0d1523;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
 }

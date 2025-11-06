@@ -1,5 +1,103 @@
+// app.js - Aplicación principal del IFN
+
 // Actualizar año
 document.getElementById('year').textContent = new Date().getFullYear();
+
+// Base de datos de usuarios simulada
+const UsersDB = {
+  usuarios: [
+    {
+      id: 1,
+      email: 'admin@ifn.gov.co',
+      password: 'Admin123*',
+      role: 'Administrador',
+      nombre: 'Administrador Sistema',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 2,
+      email: 'coordinador@ifn.gov.co',
+      password: 'Coord123*',
+      role: 'Coordinador',
+      nombre: 'Coordinador Regional',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 3,
+      email: 'tecnico@ifn.gov.co',
+      password: 'Tecnico123*',
+      role: 'Tecnico',
+      nombre: 'Técnico de Campo',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 4,
+      email: 'botanico@ifn.gov.co',
+      password: 'Botanico123*',
+      role: 'Botanico',
+      nombre: 'Botánico Especialista',
+      activo: true,
+      fechaCreacion: '2024-01-15T08:00:00Z'
+    },
+    {
+      id: 5,
+      email: 'coordinador2@ifn.gov.co',
+      password: 'Coord456*',
+      role: 'Coordinador',
+      nombre: 'Coordinador Zona Norte',
+      activo: true,
+      fechaCreacion: '2024-02-20T10:30:00Z'
+    },
+    {
+      id: 6,
+      email: 'tecnico2@ifn.gov.co',
+      password: 'Tecnico456*',
+      role: 'Tecnico',
+      nombre: 'Técnico Zona Sur',
+      activo: true,
+      fechaCreacion: '2024-02-20T10:30:00Z'
+    }
+  ],
+
+  // Método para validar credenciales
+  validarCredenciales(email, password) {
+    const usuario = this.usuarios.find(u => 
+      u.email.toLowerCase() === email.toLowerCase() && 
+      u.password === password &&
+      u.activo === true
+    );
+    
+    if (usuario) {
+      return {
+        id: usuario.id,
+        email: usuario.email,
+        role: usuario.role,
+        nombre: usuario.nombre
+      };
+    }
+    return null;
+  },
+
+  // Método para obtener usuario por email
+  obtenerUsuarioPorEmail(email) {
+    return this.usuarios.find(u => u.email.toLowerCase() === email.toLowerCase() && u.activo);
+  },
+
+  // Método para obtener todos los usuarios (para administrador)
+  obtenerTodosUsuarios() {
+    return this.usuarios.map(u => ({
+      id: u.id,
+      email: u.email,
+      role: u.role,
+      nombre: u.nombre,
+      activo: u.activo,
+      fechaCreacion: u.fechaCreacion
+    }));
+  }
+};
 
 // Contadores animados para la sección hero
 function animateCounter(elementId, finalValue, duration = 2000) {
@@ -85,6 +183,481 @@ const State = {
   autosaveTimeouts: {}
 };
 
+// Base de datos simulada
+const Database = {
+  conglomerados: [
+    {
+      id: 1,
+      codigo: "CONG-AMZ-001",
+      region: "Amazonía",
+      municipio: "Leticia",
+      vereda: "Kilómetro 11",
+      fecha: "2024-03-15",
+      brigada: "Brigada Amazonas",
+      latitud: -4.215278,
+      longitud: -69.940556,
+      observaciones: "Conglomerado en zona de bosque primario",
+      estado: "activo",
+      fechaCreacion: "2024-03-15T10:30:00Z"
+    },
+    {
+      id: 2,
+      codigo: "CONG-AND-001",
+      region: "Andina",
+      municipio: "Santander",
+      vereda: "Chicamocha",
+      fecha: "2024-04-20",
+      brigada: "Brigada Santander",
+      latitud: 6.605833,
+      longitud: -73.067778,
+      observaciones: "Conglomerado en zona de bosque seco tropical",
+      estado: "activo",
+      fechaCreacion: "2024-04-20T14:15:00Z"
+    },
+    {
+      id: 3,
+      codigo: "CONG-PAC-001",
+      region: "Pacífico",
+      municipio: "Buenaventura",
+      vereda: "La Barra",
+      fecha: "2024-05-10",
+      brigada: "Brigada Pacífico",
+      latitud: 3.880278,
+      longitud: -77.031111,
+      observaciones: "Conglomerado en zona de manglar",
+      estado: "activo",
+      fechaCreacion: "2024-05-10T08:45:00Z"
+    },
+    {
+      id: 4,
+      codigo: "CONG-CAR-001",
+      region: "Caribe",
+      municipio: "Santa Marta",
+      vereda: "Minca",
+      fecha: "2024-06-05",
+      brigada: "Brigada Caribe",
+      latitud: 11.145833,
+      longitud: -74.116667,
+      observaciones: "Conglomerado en Sierra Nevada",
+      estado: "activo",
+      fechaCreacion: "2024-06-05T11:20:00Z"
+    },
+    {
+      id: 5,
+      codigo: "CONG-ORI-001",
+      region: "Orinoquía",
+      municipio: "Villavicencio",
+      vereda: "Acacías",
+      fecha: "2024-07-12",
+      brigada: "Brigada Orinoquía",
+      latitud: 4.142222,
+      longitud: -73.626667,
+      observaciones: "Conglomerado en zona de sabana",
+      estado: "activo",
+      fechaCreacion: "2024-07-12T09:30:00Z"
+    }
+  ],
+
+  subparcelas: [
+    {
+      id: 1,
+      codigo: "SP-AMZ-001-A",
+      conglomerado: "CONG-AMZ-001",
+      estado: "activo",
+      coberturas: "Bosque denso alto",
+      latitud: -4.216389,
+      longitud: -69.941667,
+      fechaCreacion: "2024-03-16T09:15:00Z"
+    },
+    {
+      id: 2,
+      codigo: "SP-AMZ-001-B",
+      conglomerado: "CONG-AMZ-001",
+      estado: "activo",
+      coberturas: "Bosque denso alto",
+      latitud: -4.214167,
+      longitud: -69.939444,
+      fechaCreacion: "2024-03-16T10:30:00Z"
+    },
+    {
+      id: 3,
+      codigo: "SP-AND-001-A",
+      conglomerado: "CONG-AND-001",
+      estado: "activo",
+      coberturas: "Bosque seco tropical",
+      latitud: 6.606944,
+      longitud: -73.068889,
+      fechaCreacion: "2024-04-21T08:45:00Z"
+    },
+    {
+      id: 4,
+      codigo: "SP-PAC-001-A",
+      conglomerado: "CONG-PAC-001",
+      estado: "activo",
+      coberturas: "Manglar",
+      latitud: 3.881389,
+      longitud: -77.032222,
+      fechaCreacion: "2024-05-11T14:20:00Z"
+    },
+    {
+      id: 5,
+      codigo: "SP-CAR-001-A",
+      conglomerado: "CONG-CAR-001",
+      estado: "activo",
+      coberturas: "Bosque montano bajo",
+      latitud: 11.146944,
+      longitud: -74.117778,
+      fechaCreacion: "2024-06-06T10:15:00Z"
+    },
+    {
+      id: 6,
+      codigo: "SP-ORI-001-A",
+      conglomerado: "CONG-ORI-001",
+      estado: "activo",
+      coberturas: "Sabana arbolada",
+      latitud: 4.143333,
+      longitud: -73.627778,
+      fechaCreacion: "2024-07-13T11:45:00Z"
+    }
+  ],
+
+  arboles: [
+    {
+      id: 1,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-A",
+      nombreCientifico: "Ceiba pentandra",
+      nombresComunes: "Ceiba, bonga",
+      categoria: "Latifoliado",
+      dap: 45.2,
+      altura: 35.5,
+      latitud: -4.216389,
+      longitud: -69.941667,
+      azimut: 45,
+      usos: "maderable, ornamental",
+      observaciones: "Árbol emergente, buen estado fitosanitario",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-03-16",
+      fechaRegistro: "2024-03-16T09:30:00Z"
+    },
+    {
+      id: 2,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-A",
+      nombreCientifico: "Hevea brasiliensis",
+      nombresComunes: "Caucho, seringueira",
+      categoria: "Latifoliado",
+      dap: 32.8,
+      altura: 28.3,
+      latitud: -4.216389,
+      longitud: -69.941667,
+      azimut: 120,
+      usos: "maderable, látex",
+      observaciones: "Presencia de sangría para látex",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-03-16",
+      fechaRegistro: "2024-03-16T10:15:00Z"
+    },
+    {
+      id: 3,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-B",
+      nombreCientifico: "Bertholletia excelsa",
+      nombresComunes: "Nuez del Brasil, castaña",
+      categoria: "Latifoliado",
+      dap: 52.1,
+      altura: 42.7,
+      latitud: -4.214167,
+      longitud: -69.939444,
+      azimut: 285,
+      usos: "maderable, alimenticio",
+      observaciones: "Frutos inmaduros presentes",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-03-16",
+      fechaRegistro: "2024-03-16T11:20:00Z"
+    },
+    {
+      id: 4,
+      conglomerado: "CONG-AND-001",
+      subparcela: "SP-AND-001-A",
+      nombreCientifico: "Quercus humboldtii",
+      nombresComunes: "Roble, roble andino",
+      categoria: "Latifoliado",
+      dap: 38.5,
+      altura: 32.1,
+      latitud: 6.606944,
+      longitud: -73.068889,
+      azimut: 90,
+      usos: "maderable, protección",
+      observaciones: "Árbol dominante en la parcela",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-04-21",
+      fechaRegistro: "2024-04-21T09:00:00Z"
+    },
+    {
+      id: 5,
+      conglomerado: "CONG-AND-001",
+      subparcela: "SP-AND-001-A",
+      nombreCientifico: "Anacardium excelsum",
+      nombresComunes: "Caracolí, espavé",
+      categoria: "Latifoliado",
+      dap: 41.3,
+      altura: 29.8,
+      latitud: 6.606944,
+      longitud: -73.068889,
+      azimut: 210,
+      usos: "maderable, sombra",
+      observaciones: "Copa amplia, buen estado",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-04-21",
+      fechaRegistro: "2024-04-21T10:30:00Z"
+    },
+    {
+      id: 6,
+      conglomerado: "CONG-PAC-001",
+      subparcela: "SP-PAC-001-A",
+      nombreCientifico: "Rhizophora mangle",
+      nombresComunes: "Mangle rojo",
+      categoria: "Latifoliado",
+      dap: 22.7,
+      altura: 18.4,
+      latitud: 3.881389,
+      longitud: -77.032222,
+      azimut: 150,
+      usos: "protección costera, leña",
+      observaciones: "Raíces aéreas bien desarrolladas",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-05-11",
+      fechaRegistro: "2024-05-11T14:45:00Z"
+    },
+    {
+      id: 7,
+      conglomerado: "CONG-PAC-001",
+      subparcela: "SP-PAC-001-A",
+      nombreCientifico: "Avicennia germinans",
+      nombresComunes: "Mangle negro",
+      categoria: "Latifoliado",
+      dap: 19.8,
+      altura: 15.2,
+      latitud: 3.881389,
+      longitud: -77.032222,
+      azimut: 330,
+      usos: "protección costera, medicinal",
+      observaciones: "Neumatóforos visibles",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-05-11",
+      fechaRegistro: "2024-05-11T15:20:00Z"
+    },
+    {
+      id: 8,
+      conglomerado: "CONG-CAR-001",
+      subparcela: "SP-CAR-001-A",
+      nombreCientifico: "Swietenia macrophylla",
+      nombresComunes: "Caoba, aguano",
+      categoria: "Latifoliado",
+      dap: 48.9,
+      altura: 36.7,
+      latitud: 11.146944,
+      longitud: -74.117778,
+      azimut: 75,
+      usos: "maderable, ornamental",
+      observaciones: "Madera de alta calidad",
+      estado: "validado",
+      validadoPor: "Coordinador",
+      fecha: "2024-06-06",
+      fechaRegistro: "2024-06-06T10:45:00Z"
+    },
+    {
+      id: 9,
+      conglomerado: "CONG-CAR-001",
+      subparcela: "SP-CAR-001-A",
+      nombreCientifico: "Cedrela odorata",
+      nombresComunes: "Cedro, cedro amargo",
+      categoria: "Latifoliado",
+      dap: 36.4,
+      altura: 31.2,
+      latitud: 11.146944,
+      longitud: -74.117778,
+      azimut: 195,
+      usos: "maderable, aromático",
+      observaciones: "Aroma característico en corteza",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-06-06",
+      fechaRegistro: "2024-06-06T11:30:00Z"
+    },
+    {
+      id: 10,
+      conglomerado: "CONG-ORI-001",
+      subparcela: "SP-ORI-001-A",
+      nombreCientifico: "Curatella americana",
+      nombresComunes: "Chaparro, yayo",
+      categoria: "Latifoliado",
+      dap: 28.3,
+      altura: 12.5,
+      latitud: 4.143333,
+      longitud: -73.627778,
+      azimut: 300,
+      usos: "leña, medicinal",
+      observaciones: "Típico de sabanas bien drenadas",
+      estado: "validado",
+      validadoPor: "Botanico",
+      fecha: "2024-07-13",
+      fechaRegistro: "2024-07-13T12:15:00Z"
+    },
+    {
+      id: 11,
+      conglomerado: "CONG-ORI-001",
+      subparcela: "SP-ORI-001-A",
+      nombreCientifico: "Byrsonima crassifolia",
+      nombresComunes: "Chaparro manteca, nance",
+      categoria: "Latifoliado",
+      dap: 18.7,
+      altura: 8.9,
+      latitud: 4.143333,
+      longitud: -73.627778,
+      azimut: 135,
+      usos: "frutal, medicinal",
+      observaciones: "Frutos verdes presentes",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-07-13",
+      fechaRegistro: "2024-07-13T13:00:00Z"
+    },
+    {
+      id: 12,
+      conglomerado: "CONG-AMZ-001",
+      subparcela: "SP-AMZ-001-B",
+      nombreCientifico: "Euterpe precatoria",
+      nombresComunes: "Açaí, palmiche",
+      categoria: "Palma",
+      dap: 15.2,
+      altura: 22.8,
+      latitud: -4.214167,
+      longitud: -69.939444,
+      azimut: 60,
+      usos: "alimenticio, artesanal",
+      observaciones: "Racimos de frutos maduros",
+      estado: "pendiente_validacion",
+      validadoPor: "",
+      fecha: "2024-03-17",
+      fechaRegistro: "2024-03-17T08:45:00Z"
+    }
+  ],
+
+  // Método para inicializar datos en el State
+  initializeData() {
+    // Cargar datos en el State si no existen
+    if (State.data.conglomerados.length === 0) {
+      State.data.conglomerados = this.conglomerados;
+    }
+    
+    if (State.data.subparcelas.length === 0) {
+      State.data.subparcelas = this.subparcelas;
+    }
+    
+    if (State.data.arboles.length === 0) {
+      State.data.arboles = this.arboles;
+    }
+    
+    // Guardar en localStorage
+    saveToStorage();
+  },
+
+  // Método para generar datos de prueba adicionales
+  generateSampleData(count = 50) {
+    const especies = [
+      { cientifico: "Ocotea caparrapi", comun: "Laurel" },
+      { cientifico: "Aniba perutilis", comun: "Comino" },
+      { cientifico: "Copaifera officinalis", comun: "Aceite" },
+      { cientifico: "Hura crepitans", comun: "Ceiba amarilla" },
+      { cientifico: "Ficus insipida", comun: "Ojé" },
+      { cientifico: "Spondias mombin", comun: "Jobo" },
+      { cientifico: "Brosimum utile", comun: "Sandé" },
+      { cientifico: "Virola sebifera", comun: "Cumala" },
+      { cientifico: "Caryocar nuciferum", comun: "Almendro" },
+      { cientifico: "Astrocaryum chambira", comun: "Chambira" }
+    ];
+
+    const conglomerados = this.conglomerados;
+    const subparcelas = this.subparcelas;
+
+    for (let i = 0; i < count; i++) {
+      const congIndex = Math.floor(Math.random() * conglomerados.length);
+      const spIndex = Math.floor(Math.random() * subparcelas.length);
+      const especieIndex = Math.floor(Math.random() * especies.length);
+      
+      const fecha = new Date(2024, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1);
+      const fechaStr = fecha.toISOString().split('T')[0];
+      
+      const arbol = {
+        id: this.arboles.length + i + 1,
+        conglomerado: conglomerados[congIndex].codigo,
+        subparcela: subparcelas[spIndex].codigo,
+        nombreCientifico: especies[especieIndex].cientifico,
+        nombresComunes: especies[especieIndex].comun,
+        categoria: "Latifoliado",
+        dap: parseFloat((Math.random() * 40 + 10).toFixed(1)),
+        altura: parseFloat((Math.random() * 25 + 8).toFixed(1)),
+        latitud: subparcelas[spIndex].latitud + (Math.random() * 0.002 - 0.001),
+        longitud: subparcelas[spIndex].longitud + (Math.random() * 0.002 - 0.001),
+        azimut: Math.floor(Math.random() * 360),
+        usos: "maderable, " + (Math.random() > 0.5 ? "medicinal" : "ornamental"),
+        observaciones: "Registro automático de prueba",
+        estado: Math.random() > 0.3 ? "validado" : "pendiente_validacion",
+        validadoPor: Math.random() > 0.3 ? (Math.random() > 0.5 ? "Botanico" : "Coordinador") : "",
+        fecha: fechaStr,
+        fechaRegistro: fecha.toISOString()
+      };
+
+      this.arboles.push(arbol);
+    }
+
+    // Actualizar State y localStorage
+    State.data.arboles = this.arboles;
+    saveToStorage();
+    
+    return this.arboles.length;
+  },
+
+  // Método para limpiar datos de prueba
+  clearSampleData() {
+    this.arboles = this.arboles.slice(0, 12); // Mantener solo los registros originales
+    State.data.arboles = this.arboles;
+    saveToStorage();
+  },
+
+  // Método para obtener estadísticas
+  getStatistics() {
+    const totalArboles = this.arboles.length;
+    const validados = this.arboles.filter(a => a.estado === 'validado').length;
+    const pendientes = this.arboles.filter(a => a.estado === 'pendiente_validacion').length;
+    
+    const especiesUnicas = [...new Set(this.arboles.map(a => a.nombreCientifico))].length;
+    
+    const dapPromedio = this.arboles.reduce((sum, a) => sum + a.dap, 0) / totalArboles;
+    const alturaPromedio = this.arboles.reduce((sum, a) => sum + a.altura, 0) / totalArboles;
+    
+    return {
+      totalArboles,
+      validados,
+      pendientes,
+      especiesUnicas,
+      dapPromedio: dapPromedio.toFixed(1),
+      alturaPromedio: alturaPromedio.toFixed(1),
+      conglomeradosActivos: this.conglomerados.length,
+      subparcelasActivas: this.subparcelas.length
+    };
+  }
+};
+
 // Cargar datos del localStorage al iniciar
 function loadFromStorage() {
   try {
@@ -94,6 +667,9 @@ function loadFromStorage() {
       State.data.conglomerados = parsed.conglomerados || [];
       State.data.subparcelas = parsed.subparcelas || [];
       State.data.arboles = parsed.arboles || [];
+    } else {
+      // Si no hay datos guardados, inicializar con datos de prueba
+      Database.initializeData();
     }
     
     // Cargar borradores
@@ -101,8 +677,16 @@ function loadFromStorage() {
     if (borradores) {
       State.borradores = {...State.borradores, ...JSON.parse(borradores)};
     }
+
+    // Cargar usuario de sesión si existe
+    const userSession = localStorage.getItem('ifn_user_session');
+    if (userSession) {
+      State.user = JSON.parse(userSession);
+    }
   } catch (e) {
     console.warn('Error cargando datos del localStorage:', e);
+    // En caso de error, inicializar con datos de prueba
+    Database.initializeData();
   }
 }
 
@@ -121,6 +705,19 @@ function saveBorradores() {
     localStorage.setItem('ifn_borradores', JSON.stringify(State.borradores));
   } catch (e) {
     console.warn('Error guardando borradores:', e);
+  }
+}
+
+// Guardar sesión de usuario
+function saveUserSession() {
+  try {
+    if (State.user) {
+      localStorage.setItem('ifn_user_session', JSON.stringify(State.user));
+    } else {
+      localStorage.removeItem('ifn_user_session');
+    }
+  } catch (e) {
+    console.warn('Error guardando sesión de usuario:', e);
   }
 }
 
@@ -214,92 +811,6 @@ function updateAutosaveStatus(formType, status) {
 }
 
 // UTILS mejoradas
-// === API helpers (REST hacia Laravel) ===
-const API = '/api';
-
-async function api(url, opts = {}) {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...opts
-  });
-  const text = await res.text();
-  let data = null;
-  try { data = text ? JSON.parse(text) : null; } catch {}
-  if (!res.ok) {
-    const msg = (data && (data.message || JSON.stringify(data))) || `Error ${res.status}`;
-    throw new Error(msg);
-  }
-  return data ?? {};
-}
-// ===== Extensiones para conectar con Laravel =====
-const API_BASE = 'http://127.0.0.1:8000/api';
-window.API_ENABLED = true;
-
-function apiFetch(path, opts = {}) {
-  const url = `${API_BASE}${path}`;
-  const headers = { 'Content-Type': 'application/json', ...(opts.headers || {}) };
-  return fetch(url, { ...opts, headers });
-}
-
-async function postConglomerado(frontObj){
-  const payload = {
-    codigo: frontObj.codigo,
-    region: frontObj.region,
-    municipio: frontObj.municipio,
-    vereda: frontObj.vereda,
-    fecha: frontObj.fecha,
-    brigada: frontObj.brigada,
-    latitud: Number(frontObj.latitud),
-    longitud: Number(frontObj.longitud),
-    observaciones: frontObj.observaciones || null,
-    adjuntos: frontObj.adjuntos?.files ? Array.from(frontObj.adjuntos.files).map(f => f.name) : []
-  };
-
-  const res = await apiFetch('/conglomerados', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-
-  if (!res.ok) {
-    const msg = await res.text();
-    throw new Error(msg || `Error HTTP ${res.status}`);
-  }
-  return res.json();
-}
-
-
-async function getConglomerados(search='') {
-  const q = search ? `?search=${encodeURIComponent(search)}` : '';
-  const json = await api(`${API}/conglomerados${q}`);
-  // si viene paginado, devuelve .data
-  return Array.isArray(json) ? json : (json.data ?? []);
-}
-
-async function createConglomerado(payload) {
-  return api(`${API}/conglomerados`, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-}
-
-async function getSubparcelasByConglomeradoId(conglomerado_id) {
-  return api(`${API}/conglomerados/${conglomerado_id}/subparcelas`);
-}
-
-async function createSubparcela(payload) {
-  return api(`${API}/subparcelas`, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-}
-
-async function createArbol(payload) {
-  return api(`${API}/arboles`, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  });
-}
-
 const qs = (s)=>document.querySelector(s);
 const qsa = (s)=>Array.from(document.querySelectorAll(s));
 function hideAll(){ qsa('.view').forEach(v=>v.classList.add('d-none')) }
@@ -332,24 +843,24 @@ function isValidDate(dateString) {
   return date instanceof Date && !isNaN(date) && date <= new Date();
 }
 
-// Validación de nombre científico (formato Género especie)
+// Validación de nombre científico (formato Género especie) - ahora opcional
 function isValidScientificName(name) {
   if (!name || name.trim() === '') return false;
   const sciName = name.trim();
   // Formato básico: Género especie (opcional subespecie/variedad)
-  return /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){1,2}$/.test(sciName);
+  // Ahora es más permisivo para permitir validación manual
+  return /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){0,2}$/.test(sciName);
 }
 
-// APP mejorada con sistema de borradores
+// APP mejorada con sistema de borradores y autenticación
 const App = {
-  async init() {
+  init() {
     loadFromStorage();
-    await this.updateConglomeradosSelects?.();
     this.setupEventListeners();
     this.setupFileInputs();
+    this.setupLoginListeners();
     this.go('landing');
   },
-
 
   setupEventListeners() {
     // Mejorar validación de formularios
@@ -362,6 +873,20 @@ const App = {
         form.classList.add('was-validated');
       });
     });
+  },
+
+  setupLoginListeners() {
+    // Configurar toggle de visibilidad de contraseña
+    const togglePassword = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('loginPassword');
+    
+    if (togglePassword && passwordInput) {
+      togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.querySelector('i').className = type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+      });
+    }
   },
 
   setupFileInputs() {
@@ -403,6 +928,79 @@ const App = {
     fileInput.dispatchEvent(new Event('change'));
   },
 
+  // Nuevo método para manejar login con credenciales
+  handleLogin(ev) {
+    ev.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    const messageEl = document.getElementById('loginMessage');
+    
+    // Validaciones básicas
+    if (!email || !password) {
+      this.showLoginError('Por favor ingrese email y contraseña');
+      return;
+    }
+    
+    // Validar formato de email
+    if (!this.isValidEmail(email)) {
+      this.showLoginError('Por favor ingrese un email válido');
+      return;
+    }
+    
+    // Autenticar usuario
+    const usuario = UsersDB.validarCredenciales(email, password);
+    
+    if (usuario) {
+      this.loginSuccess(usuario);
+    } else {
+      this.showLoginError('Credenciales incorrectas. Verifique su email y contraseña.');
+    }
+  },
+
+  // Método para llenar credenciales automáticamente
+  fillCredentials(email, password) {
+    document.getElementById('loginEmail').value = email;
+    document.getElementById('loginPassword').value = password;
+    document.getElementById('loginMessage').classList.add('d-none');
+    
+    showToast(`Credenciales de ${email.split('@')[0]} cargadas`, 'info', 2000);
+  },
+
+  // Validar formato de email
+  isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  },
+
+  // Mostrar error en login
+  showLoginError(message) {
+    const messageEl = document.getElementById('loginMessage');
+    messageEl.textContent = message;
+    messageEl.classList.remove('d-none');
+    
+    // Agregar animación de shake
+    messageEl.classList.add('shake');
+    setTimeout(() => {
+      messageEl.classList.remove('shake');
+    }, 500);
+  },
+
+  // Login exitoso
+  loginSuccess(usuario) {
+    State.user = usuario;
+    saveUserSession();
+    
+    document.getElementById('loginMessage').classList.add('d-none');
+    showToast(`Bienvenido/a, ${usuario.nombre}`, 'success');
+    
+    this.go('dashboard');
+    
+    // Actualizar navegación y botones de auth
+    this.actualizarNavegacion();
+    this.actualizarBotonesAuth();
+  },
+
   go(view){
     State.route = view; 
     hideAll();
@@ -411,6 +1009,7 @@ const App = {
       'landing':'#view-landing',
       'login':'#view-login',
       'dashboard':'#view-dashboard',
+      'gestionUsuarios':'#view-gestionUsuarios',
       'conglomerado':'#view-conglomerado',
       'subparcela':'#view-subparcela',
       'arbol':'#view-arbol',
@@ -427,43 +1026,239 @@ const App = {
       }
     }
 
+    // Actualizar navegación según rol
+    this.actualizarNavegacion();
+
     switch(view){
+      case 'login':
+        // Limpiar formulario de login al entrar
+        const loginForm = document.getElementById('formLogin');
+        if (loginForm) {
+          loginForm.reset();
+          loginForm.classList.remove('was-validated');
+        }
+        document.getElementById('loginMessage').classList.add('d-none');
+        break;
+        
       case 'dashboard':
         qs('#userRole').textContent = State.user?.role || '';
+        qs('#userEmail').textContent = State.user?.email || '';
+        // Mostrar/ocultar secciones según rol
+        qs('#cardsAdministrador').classList.toggle('d-none', State.user?.role!=='Administrador');
+        qs('#cardsCoordinador').classList.toggle('d-none', State.user?.role!=='Coordinador');
         qs('#cardsTecnico').classList.toggle('d-none', State.user?.role!=='Tecnico');
         qs('#cardsBotanico').classList.toggle('d-none', State.user?.role!=='Botanico');
-        qs('#cardsCoordinador').classList.toggle('d-none', State.user?.role!=='Coordinador');
+        
+        // Actualizar botones de login/logout
+        this.actualizarBotonesAuth();
         this.actualizarBorradoresUI();
+        break;
+        
+      case 'gestionUsuarios':
+        // Validar permisos y cargar gestión de usuarios
+        this.cargarGestionUsuarios();
         break;
         
       case 'conglomerado': 
         State.activeForm='conglomerado';
+        // Validar permisos para conglomerados
+        this.validarPermiso('Coordinador', 'conglomerado');
         setTimeout(() => setupAutosave('formConglomerado', 'conglomerado'), 100);
         break;
         
       case 'subparcela': 
         State.activeForm='subparcela'; 
+        // Validar permisos para subparcelas
+        this.validarPermiso('Coordinador', 'subparcela');
         fillSelect('#spCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo} — ${c.municipio}</option>`); 
         setTimeout(() => setupAutosave('formSubparcela', 'subparcela'), 100);
         break;
         
       case 'arbol':
+        // Mostrar información de estado según rol
+        this.mostrarInfoEstadoArbol();
         fillSelect('#arCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo}</option>`);
         this.updateSubparcelas();
         setTimeout(() => setupAutosave('formArbol', 'arbol'), 100);
         break;
         
       case 'validacion': 
+        // Validar permisos para validación
+        this.validarPermiso('Botanico', 'validacion');
         this.renderPendientes(); 
         break;
         
       case 'reportes': 
+        // Validar permisos para reportes
+        this.validarPermiso('Coordinador', 'reportes');
         this.renderReportes(); 
         break;
         
       case 'mapa': 
         setTimeout(()=>this.mapa.init(), 100); 
         break;
+    }
+  },
+
+  // NUEVO MÉTODO: Cargar gestión de usuarios
+  cargarGestionUsuarios() {
+    const permisoElement = qs('#permisoGestionUsuarios');
+    const contenidoElement = qs('#contenidoGestionUsuarios');
+    
+    if (State.user?.role === 'Administrador') {
+      // Usuario es administrador - mostrar contenido real
+      if (permisoElement) permisoElement.classList.add('d-none');
+      if (contenidoElement) contenidoElement.classList.remove('d-none');
+      
+      // Cargar datos de usuarios
+      this.cargarTablaUsuarios();
+    } else {
+      // Usuario NO es administrador - mostrar mensaje de permiso
+      if (permisoElement) permisoElement.classList.remove('d-none');
+      if (contenidoElement) contenidoElement.classList.add('d-none');
+      showToast('Acceso restringido: Solo el Administrador puede gestionar usuarios', 'warning');
+    }
+  },
+
+  // NUEVO MÉTODO: Cargar tabla de usuarios
+  cargarTablaUsuarios() {
+    const tablaUsuarios = qs('#tablaUsuarios');
+    const totalUsuarios = qs('#totalUsuarios');
+    
+    if (!tablaUsuarios || !totalUsuarios) return;
+    
+    const usuarios = UsersDB.obtenerTodosUsuarios();
+    totalUsuarios.textContent = `Total: ${usuarios.length} usuarios`;
+    
+    tablaUsuarios.innerHTML = usuarios.map(usuario => `
+      <tr>
+        <td>${usuario.id}</td>
+        <td>${usuario.nombre}</td>
+        <td>${usuario.email}</td>
+        <td><span class="badge ${this.getBadgeClassForRole(usuario.role)}">${usuario.role}</span></td>
+        <td>
+          <span class="badge ${usuario.activo ? 'bg-success' : 'bg-secondary'}">
+            ${usuario.activo ? 'Activo' : 'Inactivo'}
+          </span>
+        </td>
+        <td>${new Date(usuario.fechaCreacion).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-sm btn-outline-primary" onclick="App.editarUsuario(${usuario.id})" title="Editar">
+            <i class="bi bi-pencil"></i>
+          </button>
+          <button class="btn btn-sm btn-outline-${usuario.activo ? 'warning' : 'success'} ms-1" 
+                  onclick="App.${usuario.activo ? 'desactivar' : 'activar'}Usuario(${usuario.id})" 
+                  title="${usuario.activo ? 'Desactivar' : 'Activar'}">
+            <i class="bi bi-${usuario.activo ? 'person-x' : 'person-check'}"></i>
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  },
+
+  // NUEVO MÉTODO: Obtener clase CSS para badge según rol
+  getBadgeClassForRole(role) {
+    const classes = {
+      'Administrador': 'bg-danger',
+      'Coordinador': 'bg-success', 
+      'Tecnico': 'bg-warning',
+      'Botanico': 'bg-info'
+    };
+    return classes[role] || 'bg-secondary';
+  },
+
+  // NUEVO MÉTODO: Mostrar modal para nuevo usuario
+  mostrarModalNuevoUsuario() {
+    showToast('Funcionalidad de nuevo usuario en desarrollo', 'info');
+  },
+
+  // NUEVO MÉTODO: Editar usuario
+  editarUsuario(id) {
+    showToast(`Editar usuario ${id} - En desarrollo`, 'info');
+  },
+
+  // NUEVO MÉTODO: Activar usuario
+  activarUsuario(id) {
+    if (confirm('¿Estás seguro de que quieres activar este usuario?')) {
+      showToast('Usuario activado', 'success');
+      // Aquí iría la lógica real para activar el usuario
+      this.cargarTablaUsuarios(); // Recargar tabla
+    }
+  },
+
+  // NUEVO MÉTODO: Desactivar usuario
+  desactivarUsuario(id) {
+    if (id === State.user?.id) {
+      showToast('No puedes desactivar tu propio usuario', 'warning');
+      return;
+    }
+    
+    if (confirm('¿Estás seguro de que quieres desactivar este usuario?')) {
+      showToast('Usuario desactivado', 'success');
+      // Aquí iría la lógica real para desactivar el usuario
+      this.cargarTablaUsuarios(); // Recargar tabla
+    }
+  },
+
+  // Actualizar navegación según rol del usuario
+  actualizarNavegacion() {
+    const userRole = State.user?.role;
+    
+    // Ocultar todos los elementos de navegación primero
+    qsa('[data-role-visible]').forEach(el => {
+      el.classList.add('d-none');
+    });
+    
+    // Mostrar elementos según el rol
+    if (userRole) {
+      qsa(`[data-role-visible*="${userRole}"]`).forEach(el => {
+        el.classList.remove('d-none');
+      });
+    }
+  },
+
+  // Actualizar botones de autenticación
+  actualizarBotonesAuth() {
+    const btnLogin = qs('#btnLogin');
+    const btnLogout = qs('#btnLogout');
+    
+    if (State.user) {
+      btnLogin?.classList.add('d-none');
+      btnLogout?.classList.remove('d-none');
+    } else {
+      btnLogin?.classList.remove('d-none');
+      btnLogout?.classList.add('d-none');
+    }
+  },
+
+  // Validar permisos para acceder a módulos
+  validarPermiso(rolRequerido, modulo) {
+    if (State.user?.role !== rolRequerido) {
+      const permisoElement = qs(`#permiso${modulo.charAt(0).toUpperCase() + modulo.slice(1)}`);
+      if (permisoElement) {
+        permisoElement.classList.remove('d-none');
+      }
+      showToast(`Acceso restringido: Solo ${rolRequerido} puede acceder a este módulo`, 'warning');
+      return false;
+    }
+    return true;
+  },
+
+  // Mostrar información de estado del árbol según rol
+  mostrarInfoEstadoArbol() {
+    const infoElement = qs('#infoEstadoArbol');
+    const textoElement = qs('#textoEstadoArbol');
+    
+    if (!infoElement || !textoElement) return;
+    
+    if (State.user?.role === 'Tecnico') {
+      infoElement.classList.remove('d-none');
+      textoElement.textContent = 'El árbol se registrará como PENDIENTE de validación. El botánico deberá confirmar la identidad científica.';
+    } else if (State.user?.role === 'Botanico') {
+      infoElement.classList.remove('d-none');
+      textoElement.textContent = 'El árbol se registrará como VALIDADO inmediatamente. Asegúrese de conocer correctamente la identidad científica.';
+    } else {
+      infoElement.classList.add('d-none');
     }
   },
 
@@ -551,461 +1346,220 @@ const App = {
     }
   },
 
-async updateSubparcelas(conglomerado = null) {
-  const congSelect = qs('#arCong');
-  const subSelect  = qs('#arSub');
-  if (!congSelect || !subSelect) return;
+  updateSubparcelas(conglomerado = null) {
+    const congSelect = qs('#arCong');
+    const subSelect = qs('#arSub');
+    
+    if (!congSelect || !subSelect) return;
+    
+    const selectedCong = conglomerado || congSelect.value;
+    const subparcelasFiltradas = selectedCong ? 
+      State.data.subparcelas.filter(s => s.conglomerado === selectedCong) : 
+      State.data.subparcelas;
+      
+    fillSelect(subSelect, subparcelasFiltradas, s=>`<option value="${s.codigo}">${s.codigo}</option>`);
+  },
 
-  const selectedCode = conglomerado || congSelect.value;
-
-  // estado inicial
-  subSelect.innerHTML = '<option value="">Seleccione…</option>';
-  if (!selectedCode) return;
-
-  // buscar el ID del conglomerado (lo necesitamos para la API)
-  const cong = State.data.conglomerados.find(c => c.codigo === selectedCode);
-  if (!cong) return;
-
-  // 1) intentar cargar desde backend
-  try {
-    const subs = await api(`${API}/conglomerados/${cong.id}/subparcelas`);
-    const options = (subs || [])
-      .map(s => `<option value="${s.codigo}" data-id="${s.id}">${s.codigo}</option>`)
-      .join('');
-    subSelect.innerHTML = `<option value="">Seleccione…</option>${options}`;
-    return; // listo con API
-  } catch (e) {
-    // sigue a fallback local
-  }
-
-  // 2) fallback: usar las que tengamos en memoria local
-  try {
-    const subsLocal = State.data.subparcelas.filter(s => s.conglomerado === selectedCode);
-    const options = subsLocal
-      .map(s => `<option value="${s.codigo}">${s.codigo}</option>`)
-      .join('');
-    subSelect.innerHTML = `<option value="">Seleccione…</option>${options}`;
-    showToast('Trabajando sin conexión: subparcelas locales', 'warning');
-  } catch {
-    subSelect.innerHTML = '<option value="">Seleccione…</option>';
-    showToast('No se pudieron cargar subparcelas', 'warning');
-  }
-},
-
+  // Método de login antiguo (para compatibilidad)
   login(role){ 
-    State.user = { role }; 
-    this.go('dashboard'); 
-    showToast(`Sesión iniciada como ${role}`, 'primary'); 
+    // Buscar un usuario con ese rol para mantener compatibilidad
+    const usuario = UsersDB.usuarios.find(u => u.role === role && u.activo);
+    if (usuario) {
+      this.loginSuccess({
+        id: usuario.id,
+        email: usuario.email,
+        role: usuario.role,
+        nombre: usuario.nombre
+      });
+    } else {
+      showToast(`No se encontró usuario para el rol: ${role}`, 'warning');
+    }
   },
 
   logout(){ 
     State.user = null; 
+    saveUserSession();
     this.go('landing'); 
     showToast('Sesión cerrada', 'secondary'); 
+    
+    // Actualizar navegación y botones de auth
+    this.actualizarNavegacion();
+    this.actualizarBotonesAuth();
   },
 
-// === ACTUALIZAR SELECTS DE CONGLOMERADOS (para formularios dependientes) ===
-async updateConglomeradosSelects() {
-  const selects = ['#spCong', '#arCong']; // selects donde se listan los conglomerados
-  selects.forEach(sel => {
-    const el = qs(sel);
-    if (el) el.innerHTML = '<option value="">Cargando…</option>';
-  });
+  saveConglomerado(ev){
+    ev.preventDefault();
+    
+    // Validar permisos
+    if (!this.validarPermiso('Coordinador', 'conglomerado')) return;
+    
+    const form = ev.target;
+    const fd = new FormData(form);
+    const obj = Object.fromEntries(fd.entries());
+    const msgEl = qs('#msgCong');
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
 
-  try {
-    const res = await api(`${API}/conglomerados`);
-    const data = res.data || res;
+    // Validaciones adicionales
+    const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
+    if(!isValidCoordinate(lat, lng)){
+      msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas. Latitud debe estar entre -90 y 90, Longitud entre -180 y 180.');
+      return;
+    }
 
-    // Pintar opciones
-    selects.forEach(sel => {
-      const el = qs(sel);
-      if (!el) return;
-      el.innerHTML =
-        '<option value="">Seleccione…</option>' +
-        data.map(c => `<option value="${c.codigo}" data-id="${c.id}">${c.codigo} — ${c.municipio}</option>`).join('');
+    if(!isValidDate(obj.fecha)){
+      msgEl.innerHTML = alertBox('danger', 'Fecha inválida. No puede ser futura.');
+      return;
+    }
+
+    if(State.data.conglomerados.some(c=>c.codigo===obj.codigo)){
+      msgEl.innerHTML = alertBox('danger', 'El código del conglomerado ya existe.'); 
+      return;
+    }
+
+    State.data.conglomerados.push({ 
+      id: Date.now(), 
+      ...obj, 
+      estado:'registrado',
+      fechaCreacion: new Date().toISOString(),
+      adjuntos: form.adjuntos?.files ? Array.from(form.adjuntos.files).map(f => f.name) : []
     });
-
-    // Sincronizar cache local (modo offline)
-    const nuevos = data.map(c => ({
-      id: c.id,
-      codigo: c.codigo,
-      region: c.region,
-      municipio: c.municipio,
-      vereda: c.vereda,
-      latitud: c.latitud,
-      longitud: c.longitud,
-      fecha: c.fecha,
-      brigada: c.brigada,
-      observaciones: c.observaciones,
-      adjuntos: c.adjuntos || []
-    }));
-
-    nuevos.forEach(n => {
-      if (!State.data.conglomerados.some(c => c.codigo === n.codigo)) {
-        State.data.conglomerados.push(n);
-      }
-    });
+    
+    // Limpiar borrador después de guardar exitosamente
+    State.borradores.conglomerado = null;
+    saveBorradores();
     saveToStorage();
-  } catch (err) {
-    console.warn('Backend no disponible, usando locales:', err);
-    selects.forEach(sel => {
-      const el = qs(sel);
-      if (!el) return;
-      el.innerHTML =
-        '<option value="">Seleccione…</option>' +
-        State.data.conglomerados
-          .map(c => `<option value="${c.codigo}">${c.codigo} — ${c.municipio || ''}</option>`)
-          .join('');
-    });
-    showToast('Usando conglomerados locales (sin conexión)', 'warning');
-  }
-},
-
-// === CARGAR SUBPARCELAS POR CONGLOMERADO EN SELECT DEL FORM "Árbol" ===
-async updateSubparcelas(conglomerado = null) {
-  const congSelect = qs('#arCong');
-  const subSelect  = qs('#arSub');
-  if (!congSelect || !subSelect) return;
-
-  const selectedCode = conglomerado || congSelect.value;
-  subSelect.innerHTML = '<option value="">Seleccione…</option>';
-  if (!selectedCode) return;
-
-  // 1) intenta desde backend
-  try {
-    const res = await api(`${API}/conglomerados/${encodeURIComponent(selectedCode)}/subparcelas`);
-    const subs = Array.isArray(res) ? res : (res.data || []);
-    const options = subs.map(s => `<option value="${s.codigo}">${s.codigo}</option>`).join('');
-    subSelect.innerHTML = `<option value="">Seleccione…</option>${options}`;
-  } catch {
-    // 2) fallback local
-    const subsLocal = State.data.subparcelas
-      .filter(s => s.conglomerado === selectedCode)
-      .map(s => `<option value="${s.codigo}">${s.codigo}</option>`)
-      .join('');
-    subSelect.innerHTML = `<option value="">Seleccione…</option>${subsLocal}`;
-  }
-},
-
-
-// === GUARDAR CONGLOMERADO ===
-async saveConglomerado(ev) {
-  ev.preventDefault();
-  const form = ev.target;
-  const fd = new FormData(form);
-  const obj = Object.fromEntries(fd.entries());
-  const msgEl = qs('#msgCong');
-
-  if (!form.checkValidity()) {
-    form.classList.add('was-validated');
-    return;
-  }
-
-  // Validaciones adicionales
-  const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
-  if (!isValidCoordinate(lat, lng)) {
-    msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas. Latitud debe estar entre -90 y 90, Longitud entre -180 y 180.');
-    return;
-  }
-  if (!isValidDate(obj.fecha)) {
-    msgEl.innerHTML = alertBox('danger', 'Fecha inválida. No puede ser futura.');
-    return;
-  }
-
-  // Crear objeto local
-  const nuevo = {
-    id: Date.now(),
-    ...obj,
-    latitud: lat,
-    longitud: lng,
-    adjuntos: form.adjuntos?.files ? Array.from(form.adjuntos.files).map(f => f.name) : [],
-    fechaCreacion: new Date().toISOString()
-  };
-
-  // Guardar en memoria local
-  State.data.conglomerados.push(nuevo);
-  saveToStorage();
-  State.borradores.conglomerado = null;
-  saveBorradores();
-
-  msgEl.innerHTML = alertBox('success', 'Conglomerado registrado exitosamente');
-  showToast('Conglomerado guardado', 'success');
-  form.reset();
-  form.classList.remove('was-validated');
-
-  // Mostrar marcador en mapa
-  if (State.mapReady) {
-    this.mapa.addMarker([lat, lng], `${obj.codigo} — ${obj.municipio}`, 'conglomerado');
-    this.mapa.fit();
-  }
-
-  this.actualizarBorradoresUI();
-
-// ==== Intentar enviar al backend (Laravel) ====
-try {
-  // Construir adjuntos desde el form (corregido: NO usa "nuevo.adjuntos")
-  const adjuntosArr = form.adjuntos?.files
-    ? Array.from(form.adjuntos.files).map(f => f.name)
-    : [];
-
-  const payload = {
-    codigo: obj.codigo,
-    region: obj.region,
-    municipio: obj.municipio,
-    vereda: obj.vereda,
-    fecha: obj.fecha,
-    brigada: obj.brigada,
-    latitud: lat,
-    longitud: lng,
-    observaciones: obj.observaciones || null,
-    adjuntos: adjuntosArr
-  };
-
-  const res = await fetch(`${API}/conglomerados`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (res.ok) {
-    const creado = await res.json();
-
-    // sincronizar (opcional, si quieres tener el ID real del server en memoria)
-    const idx = State.data.conglomerados.findIndex(c => c.codigo === payload.codigo);
-    if (idx >= 0) {
-      State.data.conglomerados[idx] = { ...State.data.conglomerados[idx], ...creado };
-    } else {
-      State.data.conglomerados.push(creado);
+    
+    msgEl.innerHTML = alertBox('success', 'Conglomerado registrado exitosamente');
+    showToast('Conglomerado guardado', 'success');
+    form.reset();
+    form.classList.remove('was-validated');
+    
+    if(State.mapReady){
+      this.mapa.addMarker([lat, lng], `${obj.codigo} — ${obj.municipio}`, 'conglomerado');
+      this.mapa.fit();
     }
+    
+    this.actualizarBorradoresUI();
+  },
+
+  saveSubparcela(ev){
+    ev.preventDefault();
+    
+    // Validar permisos
+    if (!this.validarPermiso('Coordinador', 'subparcela')) return;
+    
+    const form = ev.target;
+    const fd = new FormData(form);
+    const obj = Object.fromEntries(fd.entries());
+    const msgEl = qs('#msgSub');
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
+    }
+
+    if(!State.data.conglomerados.some(c=>c.codigo===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.'); 
+      return;
+    }
+
+    const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
+    if(!isValidCoordinate(lat, lng)){
+      msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas.');
+      return;
+    }
+
+    if(State.data.subparcelas.some(s=>s.codigo===obj.codigo && s.conglomerado===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'El código de la subparcela ya existe en ese conglomerado.'); 
+      return;
+    }
+
+    State.data.subparcelas.push({ 
+      id: Date.now(), 
+      ...obj, 
+      estado:'registrado',
+      fechaCreacion: new Date().toISOString()
+    });
+    
+    // Limpiar borrador después de guardar exitosamente
+    State.borradores.subparcela = null;
+    saveBorradores();
     saveToStorage();
-
-    // refrescar selects dependientes
-    await this.updateConglomeradosSelects();
-
-    showToast('Conglomerado enviado al servidor', 'success');
-  } else {
-    const txt = await res.text();
-    console.warn('Error al enviar:', txt);
-    showToast('Guardado localmente, error al enviar al servidor', 'warning');
-  }
-} catch (err) {
-  console.warn('Error conexión:', err);
-  showToast('Guardado localmente, sin conexión con el servidor', 'warning');
-}
-
-},
-
-// === GUARDAR SUBPARCELA ===
-async saveSubparcela(ev) {
-  ev.preventDefault();
-  const form = ev.target;
-  const fd = new FormData(form);
-  const obj = Object.fromEntries(fd.entries());
-  const msgEl = qs('#msgSub');
-
-  if (!form.checkValidity()) {
-    form.classList.add('was-validated');
-    return;
-  }
-
-  if (!State.data.conglomerados.some(c => c.codigo === obj.conglomerado)) {
-    msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.');
-    return;
-  }
-
-  const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
-  if (!isValidCoordinate(lat, lng)) {
-    msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas.');
-    return;
-  }
-
-  if (State.data.subparcelas.some(s => s.codigo === obj.codigo && s.conglomerado === obj.conglomerado)) {
-    msgEl.innerHTML = alertBox('danger', 'El código de la subparcela ya existe en ese conglomerado.');
-    return;
-  }
-
-  // Crear registro local
-  const nueva = {
-    id: Date.now(),
-    ...obj,
-    latitud: lat,
-    longitud: lng,
-    estado: 'registrado',
-    fechaCreacion: new Date().toISOString()
-  };
-
-  State.data.subparcelas.push(nueva);
-  State.borradores.subparcela = null;
-  saveBorradores();
-  saveToStorage();
-
-  msgEl.innerHTML = alertBox('success', 'Subparcela registrada exitosamente');
-  showToast('Subparcela guardada', 'success');
-  form.reset();
-  form.classList.remove('was-validated');
-
-  if (State.mapReady) {
-    this.mapa.addMarker([lat, lng], `${obj.codigo} (SP)`, 'subparcela');
-    this.mapa.fit();
-  }
-
-  this.actualizarBorradoresUI();
-
-  // ==== Intentar enviar al backend (Laravel) ====
-  try {
-    const payload = {
-      codigo: obj.codigo,
-      estado: obj.estado,
-      coberturas: obj.coberturas,
-      latitud: lat,
-      longitud: lng,
-      // Busca ID real del cong (si se obtuvo desde backend)
-      conglomerado_id: Number(obj.conglomerado_id) || null
-    };
-
-    const res = await fetch(`${API}/subparcelas`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      showToast('Subparcela enviada al servidor', 'success');
-      await this.updateSubparcelas(payload.conglomerado_id);
-    } else {
-      const txt = await res.text();
-      console.warn('Error al enviar subparcela:', txt);
-      showToast('Guardado localmente, error al enviar al servidor', 'warning');
+    
+    msgEl.innerHTML = alertBox('success', 'Subparcela registrada exitosamente');
+    showToast('Subparcela guardada', 'success');
+    form.reset();
+    form.classList.remove('was-validated');
+    
+    if(State.mapReady){
+      this.mapa.addMarker([lat, lng], `${obj.codigo} (SP)`, 'subparcela');
+      this.mapa.fit();
     }
-  } catch (err) {
-    console.warn('Error conexión subparcela:', err);
-    showToast('Guardado localmente, sin conexión con el servidor', 'warning');
-  }
-},
+    
+    this.actualizarBorradoresUI();
+  },
 
-
-async saveArbol(ev) {
-  ev.preventDefault();
-  const form = ev.target;
-  const fd = new FormData(form);
-  const obj = Object.fromEntries(fd.entries());
-  const msgEl = qs('#msgArb');
-
-  if (!form.checkValidity()) {
-    form.classList.add('was-validated');
-    return;
-  }
-
-  // Validar que exista el conglomerado y la subparcela
-  if (!State.data.conglomerados.some(c => c.codigo === obj.conglomerado)) {
-    msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.');
-    return;
-  }
-
-  if (!State.data.subparcelas.some(s => s.codigo === obj.subparcela && s.conglomerado === obj.conglomerado)) {
-    msgEl.innerHTML = alertBox('danger', 'Subparcela no encontrada en el conglomerado seleccionado.');
-    return;
-  }
-
-  // Validar nombre científico
-  const sci = (obj.nombreCientifico || '').trim();
-  if (!isValidScientificName(sci)) {
-    msgEl.innerHTML = alertBox(
-      'danger',
-      'Formato de nombre científico inválido. Use: Género especie (ej: Quercus humboldtii)'
-    );
-    return;
-  }
-
-  // Validar coordenadas
-  const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
-  if (!isValidCoordinate(lat, lng)) {
-    msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas. Latitud entre -90 y 90, Longitud entre -180 y 180.');
-    return;
-  }
-
-  // Determinar estado según el rol del usuario
-  const estado =
-    State.user?.role === 'Botanico' || State.user?.role === 'Coordinador'
-      ? 'validado'
-      : 'pendiente_validacion';
-  const validadoPor = estado === 'validado' ? State.user.role : '';
-
-  // Crear objeto local
-  const nuevo = {
-    id: Date.now(),
-    ...obj,
-    nombreCientifico: sci,
-    latitud: lat,
-    longitud: lng,
-    estado,
-    validadoPor,
-    fecha: new Date().toISOString().slice(0, 10),
-    fechaRegistro: new Date().toISOString(),
-    evidencias: form.evidencias?.files
-      ? Array.from(form.evidencias.files).map(f => f.name)
-      : []
-  };
-
-  // Guardar localmente (offline)
-  State.data.arboles.push(nuevo);
-  State.borradores.arbol = null;
-  saveBorradores();
-  saveToStorage();
-
-  const estadoMsg = estado === 'validado' ? 'validado' : 'registrado (pendiente de validación)';
-  msgEl.innerHTML = alertBox('success', `Árbol ${estadoMsg} exitosamente`);
-  showToast(`Árbol ${estadoMsg}`, 'success');
-  form.reset();
-  form.classList.remove('was-validated');
-
-  if (State.mapReady) {
-    this.mapa.addMarker([lat, lng], `${sci}`, 'arbol');
-    this.mapa.fit();
-  }
-
-  this.actualizarBorradoresUI();
-
-  // ==== Intentar enviar al backend Laravel ====
-  try {
-    const payload = {
-      conglomerado_id: Number(obj.conglomerado_id) || null,
-      subparcela_id: Number(obj.subparcela_id) || null,
-      nombre_cientifico: sci,
-      nombres_comunes: obj.nombresComunes || null,
-      categoria: obj.categoria,
-      dap: Number(obj.dap),
-      altura: Number(obj.altura),
-      latitud: lat,
-      longitud: lng,
-      azimut: obj.azimut ? Number(obj.azimut) : null,
-      usos: obj.usos || null,
-      observaciones: obj.observaciones || null,
-      estado,
-      validado_por: validadoPor || null,
-      fecha: new Date().toISOString().slice(0, 10),
-      evidencias: nuevo.evidencias
-    };
-
-    const res = await fetch(`${API}/arboles`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-
-    if (res.ok) {
-      showToast('Árbol sincronizado con el servidor', 'success');
-    } else {
-      const txt = await res.text();
-      console.warn('Error al enviar árbol:', txt);
-      showToast('Guardado localmente, error al enviar al servidor', 'warning');
+  saveArbol(ev){
+    ev.preventDefault();
+    const form = ev.target;
+    const fd = new FormData(form);
+    const obj = Object.fromEntries(fd.entries());
+    const msgEl = qs('#msgArb');
+    
+    if (!form.checkValidity()) {
+      form.classList.add('was-validated');
+      return;
     }
-  } catch (err) {
-    console.warn('Error conexión árbol:', err);
-    showToast('Guardado localmente, sin conexión con el servidor', 'warning');
-  }
-},
 
+    if(!State.data.conglomerados.some(c=>c.codigo===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.'); 
+      return;
+    }
+
+    if(!State.data.subparcelas.some(s=>s.codigo===obj.subparcela && s.conglomerado===obj.conglomerado)){
+      msgEl.innerHTML = alertBox('danger', 'Subparcela no encontrada en el conglomerado seleccionado.'); 
+      return;
+    }
+
+    // Validar nombre científico (ahora opcional para permitir validación manual)
+    const sci = obj.nombreCientifico.trim();
+    if (sci && !isValidScientificName(sci)) {
+      msgEl.innerHTML = alertBox('warning', 'Formato de nombre científico podría ser incorrecto. Use: Género especie (ej: Quercus humboldtii). Puede continuar para validación manual.');
+      // No return aquí - permitir continuar para validación manual
+    }
+
+    // Determinar estado según el actor (Técnico → Pendiente, Botánico → Validado)
+    const estado = State.user?.role === 'Botanico' ? 'validado' : 'pendiente_validacion';
+    const validadoPor = estado === 'validado' ? State.user.role : '';
+
+    State.data.arboles.push({ 
+      id: Date.now(), 
+      ...obj, 
+      nombreCientifico: sci, 
+      estado, 
+      validadoPor, 
+      fecha: new Date().toISOString().slice(0,10),
+      fechaRegistro: new Date().toISOString(),
+      evidencias: form.evidencias?.files ? Array.from(form.evidencias.files).map(f => f.name) : []
+    });
+    
+    // Limpiar borrador después de guardar exitosamente
+    State.borradores.arbol = null;
+    saveBorradores();
+    saveToStorage();
+    
+    const estadoMsg = estado === 'validado' ? 'validado' : 'registrado (pendiente de validación)';
+    msgEl.innerHTML = alertBox('success', `Árbol ${estadoMsg} exitosamente`);
+    showToast(`Árbol ${estadoMsg}`, 'success');
+    form.reset();
+    form.classList.remove('was-validated');
+    
+    this.actualizarBorradoresUI();
+  },
 
   renderPendientes(){
     const tb = qs('#tablaPendientes tbody');
@@ -1053,26 +1607,94 @@ async saveArbol(ev) {
   },
 
   validar(id){
-    if(!(State.user?.role==='Botanico' || State.user?.role==='Coordinador')){ 
-      showToast('Solo Botánico o Coordinador pueden validar', 'warning'); 
+    if(!(State.user?.role==='Botanico')){ 
+      showToast('Solo el Botánico puede realizar validación taxonómica', 'warning'); 
       return; 
     }
     
     const arbol = State.data.arboles.find(a => a.id === id);
     if (!arbol) return;
     
-    // Verificar que tenga información mínima para validar
-    if (!arbol.nombreCientifico || !arbol.categoria) {
-      showToast('Complete la información del árbol antes de validar', 'warning');
+    // Mostrar modal de validación con opción para corregir nombre científico
+    this.mostrarModalValidacion(arbol);
+  },
+
+  mostrarModalValidacion(arbol) {
+    const modalHTML = `
+      <div class="modal fade" id="modalValidacion" tabindex="-1">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Validar Árbol</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <p><strong>ID:</strong> ${arbol.id}</p>
+              <p><strong>Conglomerado:</strong> ${arbol.conglomerado}</p>
+              <p><strong>Subparcela:</strong> ${arbol.subparcela}</p>
+              
+              <div class="mb-3">
+                <label class="form-label"><strong>Nombre científico:</strong></label>
+                <input type="text" class="form-control" id="nombreCientificoValidado" value="${arbol.nombreCientifico}" placeholder="Corrija el nombre científico si es necesario">
+                <div class="form-text">Puede corregir el nombre científico durante la validación</div>
+              </div>
+              
+              <div class="mb-3">
+                <label class="form-label"><strong>Observaciones de validación:</strong></label>
+                <textarea class="form-control" id="observacionesValidacion" rows="3" placeholder="Agregue observaciones sobre la validación taxonómica"></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+              <button type="button" class="btn btn-success" onclick="App.confirmarValidacion(${arbol.id})">
+                <i class="bi bi-check-lg me-1"></i>Confirmar Validación
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Crear modal dinámicamente
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+    
+    const modal = new bootstrap.Modal(document.getElementById('modalValidacion'));
+    modal.show();
+    
+    // Limpiar después de cerrar
+    document.getElementById('modalValidacion').addEventListener('hidden.bs.modal', function () {
+      modalContainer.remove();
+    });
+  },
+
+  confirmarValidacion(id) {
+    const nombreCientificoValidado = document.getElementById('nombreCientificoValidado').value;
+    const observacionesValidacion = document.getElementById('observacionesValidacion').value;
+    
+    if (!nombreCientificoValidado.trim()) {
+      showToast('El nombre científico es requerido', 'warning');
       return;
     }
     
     State.data.arboles = State.data.arboles.map(a=>
-      a.id===id ? {...a, estado:'validado', validadoPor: State.user.role} : a
+      a.id===id ? {
+        ...a, 
+        estado:'validado', 
+        validadoPor: State.user.role,
+        nombreCientifico: nombreCientificoValidado,
+        observaciones: a.observaciones + (observacionesValidacion ? ` | Validación: ${observacionesValidacion}` : '')
+      } : a
     );
     
     saveToStorage();
     this.renderPendientes(); 
+    
+    // Cerrar modal
+    const modal = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
+    modal.hide();
+    
     showToast('Registro validado exitosamente', 'success');
   },
 
@@ -1186,6 +1808,115 @@ async saveArbol(ev) {
   exportPDF() {
     showToast('Función de exportación PDF en desarrollo', 'info');
     // En una implementación real, aquí se integraría con una librería como jsPDF
+  },
+
+  // Nuevos métodos para datos de prueba
+  generarDatosPrueba() {
+    if (confirm('¿Generar 50 registros de árboles de prueba? Esto agregará datos ficticios a la base de datos.')) {
+      const count = Database.generateSampleData(50);
+      showToast(`Se generaron ${count} registros de prueba`, 'success');
+      this.renderReportes();
+    }
+  },
+
+  limpiarDatosPrueba() {
+    if (confirm('¿Eliminar todos los registros de prueba? Se conservarán solo los registros originales.')) {
+      Database.clearSampleData();
+      showToast('Datos de prueba eliminados', 'info');
+      this.renderReportes();
+    }
+  },
+
+  mostrarEstadisticas() {
+    const stats = Database.getStatistics();
+    
+    const modalHTML = `
+      <div class="modal fade" id="statsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bi bi-graph-up me-2"></i>Estadísticas del IFN</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <div class="card border-0 bg-light">
+                    <div class="card-body text-center">
+                      <h3 class="text-primary">${stats.totalArboles}</h3>
+                      <p class="mb-0">Total de árboles registrados</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="card border-0 bg-light">
+                    <div class="card-body text-center">
+                      <h3 class="text-success">${stats.especiesUnicas}</h3>
+                      <p class="mb-0">Especies diferentes</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0">
+                    <div class="card-body text-center">
+                      <h6>Validados</h6>
+                      <h4 class="text-success">${stats.validados}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0">
+                    <div class="card-body text-center">
+                      <h6>Pendientes</h6>
+                      <h4 class="text-warning">${stats.pendientes}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="card border-0">
+                    <div class="card-body text-center">
+                      <h6>Conglomerados</h6>
+                      <h4 class="text-info">${stats.conglomeradosActivos}</h4>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <div class="card border-0">
+                    <div class="card-body">
+                      <h6>Medidas Promedio</h6>
+                      <div class="row text-center">
+                        <div class="col-6">
+                          <strong>DAP:</strong> ${stats.dapPromedio} cm
+                        </div>
+                        <div class="col-6">
+                          <strong>Altura:</strong> ${stats.alturaPromedio} m
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    // Crear modal dinámicamente
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+    
+    const modal = new bootstrap.Modal(document.getElementById('statsModal'));
+    modal.show();
+    
+    // Limpiar después de cerrar
+    document.getElementById('statsModal').addEventListener('hidden.bs.modal', function () {
+      modalContainer.remove();
+    });
   },
 
   mapa: {
@@ -1421,6 +2152,7 @@ document.addEventListener('DOMContentLoaded', ()=>{
       setTheme(e.matches ? 'dark' : 'light');
     }
   });
+  
 
   // Inicializar la aplicación
   App.init();

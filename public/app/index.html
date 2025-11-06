@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="es" data-bs-theme="light">
 <head>
-  <base href="/app/">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IFN • Inventario Forestal Nacional - Conservación y Gestión Sostenible</title>
@@ -39,10 +38,33 @@
         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
           <li class="nav-item"><a class="nav-link" href="#" onclick="App.go('landing')">Inicio</a></li>
           <li class="nav-item"><a class="nav-link" href="#" onclick="App.go('mapa')"><i class="bi bi-geo-alt me-1"></i>Visor</a></li>
+          
+          <!-- Navegación por roles -->
+          <li class="nav-item d-none" data-role-visible="Administrador" id="navGestion">
+            <a class="nav-link" href="#" onclick="App.go('gestionUsuarios')"><i class="bi bi-people me-1"></i>Gestión Usuarios</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Coordinador" id="navConglomerados">
+            <a class="nav-link" href="#" onclick="App.go('conglomerado')"><i class="bi bi-map me-1"></i>Conglomerados</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Coordinador" id="navSubparcelas">
+            <a class="nav-link" href="#" onclick="App.go('subparcela')"><i class="bi bi-boxes me-1"></i>Subparcelas</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Tecnico,Botanico" id="navArboles">
+            <a class="nav-link" href="#" onclick="App.go('arbol')"><i class="bi bi-tree me-1"></i>Registrar Árbol</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Botanico" id="navValidacion">
+            <a class="nav-link" href="#" onclick="App.go('validacion')"><i class="bi bi-journal-check me-1"></i>Muestreo Botánico</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Coordinador" id="navReportes">
+            <a class="nav-link" href="#" onclick="App.go('reportes')"><i class="bi bi-bar-chart me-1"></i>Reportes</a>
+          </li>
         </ul>
         <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-outline-primary rounded-pill btn-sm" onclick="App.go('login')">
+          <button class="btn btn-outline-primary rounded-pill btn-sm d-none" id="btnLogin" onclick="App.go('login')">
             <i class="bi bi-box-arrow-in-right me-1"></i> Acceder
+          </button>
+          <button class="btn btn-outline-secondary rounded-pill btn-sm d-none" id="btnLogout" onclick="App.logout()">
+            <i class="bi bi-door-closed me-1"></i> Cerrar Sesión
           </button>
           <button id="themeToggle" class="btn btn-theme rounded-pill btn-sm" type="button" aria-label="Cambiar tema">
             <i class="bi bi-moon-stars" id="themeIcon"></i>
@@ -97,7 +119,7 @@
       </div>
     </section>
     
-    <!-- Resto del contenido de landing page... -->
+    <!-- Resto del contenido de landing page SIN CAMBIOS -->
     <!-- Sección: ¿Qué es el IFN? -->
     <section id="que-es" class="py-5">
       <div class="container-xl">
@@ -490,11 +512,53 @@
           <div class="card shadow-sm border-0">
             <div class="card-body p-4">
               <h1 class="h4 fw-bold text-center mb-3">Sistema de Inventario Forestal</h1>
-              <p class="text-center mb-3">Seleccione su rol para acceder</p>
-              <div class="d-grid gap-2">
-                <button class="btn btn-cta rounded-pill py-2" onclick="App.login('Tecnico')"><i class="bi bi-person-gear me-2"></i> Técnico</button>
-                <button class="btn btn-outline-cta rounded-pill py-2" onclick="App.login('Botanico')"><i class="bi bi-flower1 me-2"></i> Botánico</button>
-                <button class="btn btn-outline-cta rounded-pill py-2" onclick="App.login('Coordinador')"><i class="bi bi-people me-2"></i> Coordinador</button>
+              <p class="text-center mb-4">Ingrese sus credenciales para acceder</p>
+              
+              <div id="loginMessage" class="alert alert-danger d-none"></div>
+              
+              <form id="formLogin" onsubmit="App.handleLogin(event)" class="needs-validation" novalidate>
+                <div class="mb-3">
+                  <label for="loginEmail" class="form-label">Correo electrónico</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="loginEmail" placeholder="usuario@ifn.gov.co" required>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="loginPassword" class="form-label">Contraseña</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="loginPassword" placeholder="Ingrese su contraseña" required>
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="d-grid gap-2 mb-3">
+                  <button type="submit" class="btn btn-cta rounded-pill py-2">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                  </button>
+                </div>
+              </form>
+              
+              <div class="text-center">
+                <small class="text-muted">¿No tienes credenciales? Usa las cuentas de prueba:</small>
+                <div class="mt-2">
+                  <button class="btn btn-sm btn-outline-primary me-1 mb-1" onclick="App.fillCredentials('admin@ifn.gov.co', 'Admin123*')">
+                    Admin
+                  </button>
+                  <button class="btn btn-sm btn-outline-success me-1 mb-1" onclick="App.fillCredentials('coordinador@ifn.gov.co', 'Coord123*')">
+                    Coordinador
+                  </button>
+                  <button class="btn btn-sm btn-outline-warning me-1 mb-1" onclick="App.fillCredentials('tecnico@ifn.gov.co', 'Tecnico123*')">
+                    Técnico
+                  </button>
+                  <button class="btn btn-sm btn-outline-info mb-1" onclick="App.fillCredentials('botanico@ifn.gov.co', 'Botanico123*')">
+                    Botánico
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -508,7 +572,7 @@
     <div class="container-xl py-3">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <strong>IFN • Inventario Forestal</strong>
-        <div>Bienvenido, <span id="userRole" class="fw-semibold"></span>
+        <div>Bienvenido, <span id="userRole" class="fw-semibold"></span> (<span id="userEmail" class="text-muted"></span>)
           <button class="btn btn-sm btn-outline-secondary rounded-pill ms-2" onclick="App.logout()"><i class="bi bi-door-closed me-1"></i> Cerrar sesión</button>
         </div>
       </div>
@@ -526,55 +590,139 @@
         </div>
       </div>
       
-      <div id="cardsTecnico" class="row g-3 d-none">
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-            <h3 class="h6 fw-bold">Registrar Conglomerado</h3><p class="small">Crear nuevo conglomerado. <span class="draft-badge badge bg-warning">Auto-guardado</span></p>
-            <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('conglomerado')">Abrir</button>
-          </div></div></div>
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-            <h3 class="h6 fw-bold">Registrar Subparcela</h3><p class="small">Asociada a conglomerado. <span class="draft-badge badge bg-warning">Auto-guardado</span></p>
-            <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('subparcela')">Abrir</button>
-          </div></div></div>
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-            <h3 class="h6 fw-bold">Registrar Árbol</h3><p class="small">Pendiente de validación. <span class="draft-badge badge bg-warning">Auto-guardado</span></p>
-            <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
-          </div></div></div>
-        <div class="col-12 col-md-6 col-lg-3">
-          <div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-            <h3 class="h6 fw-bold">Visor geográfico</h3><p class="small">Capturar coordenadas.</p>
-            <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('mapa')">Abrir</button>
-          </div></div></div>
+      <!-- Dashboard Administrador -->
+      <div id="cardsAdministrador" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Gestión de Usuarios</h3>
+              <p class="small">Crear, modificar y desactivar usuarios del sistema</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('gestionUsuarios')">Abrir</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="cardsBotanico" class="row g-3 d-none">
-        <div class="col-12 col-md-4"><div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-          <h3 class="h6 fw-bold">Registrar Árbol</h3><p class="small">Registro validado. <span class="draft-badge badge bg-warning">Auto-guardado</span></p>
-          <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
-        </div></div></div>
-        <div class="col-12 col-md-4"><div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-          <h3 class="h6 fw-bold">Validación taxonómica</h3><p class="small">Validar pendientes.</p>
-          <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('validacion')">Abrir</button>
-        </div></div></div>
-        <div class="col-12 col-md-4"><div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-          <h3 class="h6 fw-bold">Visor geográfico</h3><p class="small">Revisión espacial.</p>
-          <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('mapa')">Abrir</button>
-        </div></div></div>
-      </div>
+      
+      <!-- Dashboard Coordinador -->
       <div id="cardsCoordinador" class="row g-3 d-none">
-        <div class="col-12 col-md-4"><div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-          <h3 class="h6 fw-bold">Validación taxonómica</h3><p class="small">Apoyo a validación.</p>
-          <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('validacion')">Abrir</button>
-        </div></div></div>
-        <div class="col-12 col-md-4"><div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-          <h3 class="h6 fw-bold">Generar reportes</h3><p class="small">Consolidados y exportar.</p>
-          <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('reportes')">Abrir</button>
-        </div></div></div>
-        <div class="col-12 col-md-4"><div class="card h-100 shadow-sm border-0"><div class="card-body text-center">
-          <h3 class="h6 fw-bold">Visor geográfico</h3><p class="small">Revisión espacial.</p>
-          <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('mapa')">Abrir</button>
-        </div></div></div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Asignar Conglomerado</h3>
+              <p class="small">Registro inicial de conglomerados</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('conglomerado')">Abrir</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Asignar Subparcela</h3>
+              <p class="small">Registro de subparcelas en conglomerados</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('subparcela')">Abrir</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Generar Reportes</h3>
+              <p class="small">Consolidar y exportar información</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('reportes')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Técnico -->
+      <div id="cardsTecnico" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Registrar Árbol</h3>
+              <p class="small">Registro de árboles (pendiente validación)</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Botánico -->
+      <div id="cardsBotanico" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Registrar Árbol</h3>
+              <p class="small">Registro de árboles (validado inmediatamente)</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Muestreo Botánico</h3>
+              <p class="small">Validar identidad científica de árboles</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('validacion')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gestión de Usuarios (Solo Administrador) - CORREGIDO -->
+  <section id="view-gestionUsuarios" class="view d-none">
+    <div class="container-xl py-3">
+      <h2 class="h4 mb-3">Gestión de Usuarios</h2>
+      <p class="text-muted mb-3">Administrar usuarios del sistema y asignar roles.</p>
+      
+      <!-- Validación de permisos - SOLO se muestra si NO es administrador -->
+      <div id="permisoGestionUsuarios" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Administrador puede gestionar usuarios.
+      </div>
+      
+      <!-- Contenido real de gestión de usuarios - SOLO se muestra si ES administrador -->
+      <div id="contenidoGestionUsuarios" class="d-none">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Lista de Usuarios del Sistema</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <button class="btn btn-success rounded-pill" onclick="App.mostrarModalNuevoUsuario()">
+                <i class="bi bi-person-plus me-1"></i>Nuevo Usuario
+              </button>
+              <span class="badge bg-primary" id="totalUsuarios">Total: 0 usuarios</span>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Fecha Creación</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaUsuarios">
+                  <!-- Los usuarios se cargarán dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-end mt-3">
+          <button class="btn btn-outline-secondary rounded-pill" onclick="App.go('dashboard')">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+          </button>
+        </div>
       </div>
     </div>
   </section>
@@ -618,6 +766,13 @@
         <h2 class="h4 mb-0">Registrar Conglomerado</h2>
         <span id="autosaveStatusCong" class="autosave-status d-none"></span>
       </div>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoConglomerado" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede registrar conglomerados.
+      </div>
+      
       <div id="msgCong" class="my-2"></div>
       <form id="formConglomerado" onsubmit="App.saveConglomerado(event)" class="row g-3 needs-validation" novalidate>
         <div class="col-12 col-md-4"><label class="form-label">Código <span class="text-danger">*</span></label><input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required></div>
@@ -660,6 +815,13 @@
         <h2 class="h4 mb-0">Registrar Subparcela</h2>
         <span id="autosaveStatusSub" class="autosave-status autosave-saved d-none">Auto-guardado</span>
       </div>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoSubparcela" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede registrar subparcelas.
+      </div>
+      
       <div id="msgSub" class="my-2"></div>
       <form id="formSubparcela" onsubmit="App.saveSubparcela(event)" class="row g-3 needs-validation" novalidate>
         <div class="col-12 col-md-4"><label class="form-label">Código <span class="text-danger">*</span></label><input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required></div>
@@ -695,6 +857,13 @@
         <h2 class="h4 mb-0">Registrar Árbol</h2>
         <span id="autosaveStatusArb" class="autosave-status autosave-saved d-none">Auto-guardado</span>
       </div>
+      
+      <!-- Información de estado según rol -->
+      <div id="infoEstadoArbol" class="alert alert-info d-none">
+        <i class="bi bi-info-circle me-2"></i>
+        <span id="textoEstadoArbol">El árbol se registrará como pendiente de validación.</span>
+      </div>
+      
       <div id="msgArb" class="my-2"></div>
       <form id="formArbol" onsubmit="App.saveArbol(event)" class="row g-3 needs-validation" novalidate>
         <div class="col-12 col-md-6">
@@ -759,6 +928,12 @@
       <h2 class="h4 mb-3">Validación Taxonómica</h2>
       <p class="text-muted mb-3">Revisar y confirmar la identidad científica de los árboles registrados.</p>
       
+      <!-- Validación de permisos -->
+      <div id="permisoValidacion" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Botánico puede realizar validación taxonómica.
+      </div>
+      
       <div class="table-responsive shadow-sm rounded-4 border bg-body">
         <table class="table table-hover mb-0" id="tablaPendientes">
           <thead class="table-light">
@@ -785,6 +960,12 @@
     <div class="container-xl py-3">
       <h2 class="h4 mb-3">Generar Reportes</h2>
       <p class="text-muted">Consolidar información de conglomerados, subparcelas, árboles y validaciones taxonómicas.</p>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoReportes" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede generar reportes.
+      </div>
       
       <div class="card border-0 shadow-sm mb-4">
         <div class="card-body">
@@ -828,6 +1009,16 @@
             </button>
             <button class="btn btn-outline-cta rounded-pill btn-sm" onclick="App.exportPDF()">
               <i class="bi bi-filetype-pdf me-1"></i> Exportar PDF
+            </button>
+            <!-- Botones nuevos para datos de prueba -->
+            <button class="btn btn-outline-info rounded-pill btn-sm" onclick="App.generarDatosPrueba()">
+              <i class="bi bi-database-add me-1"></i> Datos Prueba
+            </button>
+            <button class="btn btn-outline-warning rounded-pill btn-sm" onclick="App.limpiarDatosPrueba()">
+              <i class="bi bi-database-dash me-1"></i> Limpiar Pruebas
+            </button>
+            <button class="btn btn-outline-success rounded-pill btn-sm" onclick="App.mostrarEstadisticas()">
+              <i class="bi bi-graph-up me-1"></i> Estadísticas
             </button>
             <button class="btn btn-outline-secondary rounded-pill btn-sm" onclick="App.limpiarFiltros()">
               <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
