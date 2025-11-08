@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>IFN • Inventario Forestal Nacional - Conservación y Gestión Sostenible</title>
+  <meta name="description" content="Sistema Nacional de Inventario Forestal - Monitoreo, conservación y gestión sostenible de los bosques colombianos">
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body id="top" class="bg-body text-body">
+  <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+  
+  <nav class="navbar navbar-expand-lg bg-body-tertiary border-bottom sticky-top shadow-sm">
+    <div class="container-fluid container-xl py-2">
+      <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="#top">
+        <span class="brand-dot rounded-circle d-inline-flex align-items-center justify-content-center">
+          <i class="bi bi-tree-fill"></i>
+        </span>
+        <span>IFN</span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-controls="navMain" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#" onclick="App.go('landing')">Inicio</a></li>
+          <li class="nav-item"><a class="nav-link" href="#" onclick="App.go('mapa')"><i class="bi bi-geo-alt me-1"></i>Visor</a></li>
+          
+          <!-- Navegación por roles -->
+          <li class="nav-item d-none" data-role-visible="Administrador" id="navGestion">
+            <a class="nav-link" href="#" onclick="App.go('gestionUsuarios')"><i class="bi bi-people me-1"></i>Gestión Usuarios</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Coordinador" id="navConglomerados">
+            <a class="nav-link" href="#" onclick="App.go('conglomerado')"><i class="bi bi-map me-1"></i>Conglomerados</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Coordinador" id="navSubparcelas">
+            <a class="nav-link" href="#" onclick="App.go('subparcela')"><i class="bi bi-boxes me-1"></i>Subparcelas</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Tecnico,Botanico" id="navArboles">
+            <a class="nav-link" href="#" onclick="App.go('arbol')"><i class="bi bi-tree me-1"></i>Registrar Árbol</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Botanico" id="navValidacion">
+            <a class="nav-link" href="#" onclick="App.go('validacion')"><i class="bi bi-journal-check me-1"></i>Muestreo Botánico</a>
+          </li>
+          <li class="nav-item d-none" data-role-visible="Coordinador" id="navReportes">
+            <a class="nav-link" href="#" onclick="App.go('reportes')"><i class="bi bi-bar-chart me-1"></i>Reportes</a>
+          </li>
+        </ul>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-outline-primary rounded-pill btn-sm d-none" id="btnLogin" onclick="App.go('login')">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Acceder
+          </button>
+          <button class="btn btn-outline-secondary rounded-pill btn-sm d-none" id="btnLogout" onclick="App.logout()">
+            <i class="bi bi-door-closed me-1"></i> Cerrar Sesión
+          </button>
+          <button id="themeToggle" class="btn btn-theme rounded-pill btn-sm" type="button" aria-label="Cambiar tema">
+            <i class="bi bi-moon-stars" id="themeIcon"></i>
+            <span class="ms-1">Oscuro</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Landing Page -->
+  <section id="view-landing" class="view">
+    <!-- Hero Section Mejorada -->
+    <section class="hero-section" id="inicio">
+      <div class="container-xl">
+        <div class="row align-items-center">
+          <div class="col-lg-6">
+            <h1 class="display-4 fw-bold mb-4">Inventario Forestal Nacional</h1>
+            <p class="lead mb-4">Sistema integral para el monitoreo, conservación y gestión sostenible de los bosques colombianos. Unidos por la protección de nuestra biodiversidad.</p>
+            <div class="d-flex flex-wrap gap-3">
+              <button class="btn btn-light btn-lg rounded-pill px-4" onclick="App.go('login')">
+                <i class="bi bi-person-plus me-2"></i>Ingresar al Sistema
+              </button>
+              <button class="btn btn-outline-light btn-lg rounded-pill px-4" onclick="App.go('mapa')">
+                <i class="bi bi-map me-2"></i>Explorar Visor
+              </button>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="row text-center mt-4 mt-lg-0">
+              <div class="col-4">
+                <div class="stat-card">
+                  <div class="stat-number" id="counter1">0</div>
+                  <div class="stat-label">Conglomerados</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="stat-card">
+                  <div class="stat-number" id="counter2">0</div>
+                  <div class="stat-label">Especies</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="stat-card">
+                  <div class="stat-number" id="counter3">0</div>
+                  <div class="stat-label">Departamentos</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Resto del contenido de landing page SIN CAMBIOS -->
+    <!-- Sección: ¿Qué es el IFN? -->
+    <section id="que-es" class="py-5">
+      <div class="container-xl">
+        <div class="row mb-5">
+          <div class="col-lg-8 mx-auto text-center">
+            <h2 class="display-5 fw-bold mb-3">¿Qué es el Inventario Forestal Nacional?</h2>
+            <p class="lead text-muted">El IFN es el programa nacional que recopila, analiza y divulga información estratégica sobre los recursos forestales de Colombia.</p>
+          </div>
+        </div>
+        
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="feature-icon">
+              <i class="bi bi-tree"></i>
+            </div>
+            <h4 class="text-center mb-3">Monitoreo Científico</h4>
+            <p class="text-center text-muted">Seguimiento sistemático de la cobertura, estructura y biodiversidad de los bosques mediante metodologías estandarizadas.</p>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-icon">
+              <i class="bi bi-geo-alt"></i>
+            </div>
+            <h4 class="text-center mb-3">Georreferenciación</h4>
+            <p class="text-center text-muted">Localización precisa de los recursos forestales mediante coordenadas GPS y sistemas de información geográfica.</p>
+          </div>
+          <div class="col-md-4">
+            <div class="feature-icon">
+              <i class="bi bi-database"></i>
+            </div>
+            <h4 class="text-center mb-3">Base de Datos Nacional</h4>
+            <p class="text-center text-muted">Centralización de información forestal para la toma de decisiones en políticas públicas y conservación.</p>
+          </div>
+        </div>
+
+        <div class="row mt-5">
+          <div class="col-lg-10 mx-auto">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h5 class="card-title mb-3">Objetivos Estratégicos</h5>
+                <div class="row">
+                  <div class="col-md-6">
+                    <ul class="list-unstyled">
+                      <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Cuantificar la extensión y distribución de bosques</li>
+                      <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Evaluar la composición y estructura forestal</li>
+                      <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Monitorear cambios en la cobertura boscosa</li>
+                    </ul>
+                  </div>
+                  <div class="col-md-6">
+                    <ul class="list-unstyled">
+                      <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Identificar especies en riesgo</li>
+                      <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Apoyar la planificación del uso del suelo</li>
+                      <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i>Contribuir a metas de desarrollo sostenible</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Proceso de Inventario -->
+    <section id="proceso" class="py-5 bg-light">
+      <div class="container-xl">
+        <div class="row mb-5">
+          <div class="col-lg-8 mx-auto text-center">
+            <h2 class="display-5 fw-bold mb-3">Proceso de Inventario Forestal</h2>
+            <p class="lead text-muted">Metodología científica estandarizada para la recolección y validación de datos forestales.</p>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="col-lg-10 mx-auto">
+            <div class="row">
+              <div class="col-md-3 process-step">
+                <div class="step-number">1</div>
+                <div class="process-connector"></div>
+                <h5>Planificación</h5>
+                <p class="small text-muted">Diseño de conglomerados y selección de áreas de muestreo representativas</p>
+              </div>
+              <div class="col-md-3 process-step">
+                <div class="step-number">2</div>
+                <div class="process-connector"></div>
+                <h5>Campo</h5>
+                <p class="small text-muted">Recolección de datos por técnicos especializados</p>
+              </div>
+              <div class="col-md-3 process-step">
+                <div class="step-number">3</div>
+                <div class="process-connector"></div>
+                <h5>Validación</h5>
+                <p class="small text-muted">Muestreo  por botánicos y coordinadores</p>
+              </div>
+              <div class="col-md-3 process-step">
+                <div class="step-number">4</div>
+                <h5>Análisis</h5>
+                <p class="small text-muted">Procesamiento estadístico y generación de reportes</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-5">
+          <div class="col-lg-8 mx-auto">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h5 class="card-title mb-3"><i class="bi bi-geo-alt me-2"></i>Metodología de Muestreo</h5>
+                <p>El IFN utiliza una metodología de conglomerados con parcelas anidadas para asegurar representatividad estadística a nivel nacional:</p>
+                <div class="row text-center">
+                  <div class="col-4">
+                    <div class="border rounded p-3 h-100">
+                      <h6>Conglomerado</h6>
+                      <p class="text-muted small mb-0">
+                        Unidad de muestreo principal conformada por varias subparcelas distribuidas sistemáticamente en el terreno.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="border rounded p-3 h-100">
+                      <h6>Subparcela</h6>
+                      <p class="text-muted small mb-0">
+                        Área dentro del conglomerado donde se miden en detalle los árboles, la cobertura y otras variables.
+                      </p>
+                    </div>
+                  </div>
+                  <div class="col-4">
+                    <div class="border rounded p-3 h-100">
+                      <h6>Árboles</h6>
+                      <p class="text-muted small mb-0">
+                        Individuos registrados en cada subparcela con datos de especie, diámetro, altura, usos y coordenadas.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carrusel de Imágenes (Metodología de Muestreo) -->
+        <div id="ifnCarouselMuestreo"
+             class="carousel slide mb-4"
+             data-bs-ride="carousel"
+             data-bs-interval="4000"
+             data-bs-pause="false"
+             data-bs-touch="true"
+             data-bs-wrap="true"
+             aria-label="Carrusel metodología de muestreo">
+
+          <!-- Indicadores -->
+          <div class="carousel-indicators">
+            <button type="button" data-bs-target="#ifnCarouselMuestreo" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-bs-target="#ifnCarouselMuestreo" data-bs-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-bs-target="#ifnCarouselMuestreo" data-bs-slide-to="2" aria-label="Slide 3"></button>
+          </div>
+
+          <div class="carousel-inner rounded-4 shadow">
+
+            <!-- Slide 1: Conglomerado -->
+            <div class="carousel-item active">
+              <div class="ratio ratio-21x9">
+                <img src="https://www.minambiente.gov.co/wp-content/uploads/2022/07/A16CE54F-423C-4AA6-93C8-1086EA6A000C.jpeg"
+                     class="w-100 h-100 object-fit-cover"
+                     alt="Conglomerado - unidad de 1 Ha">
+              </div>
+              <div class="carousel-caption">
+                <h2 class="h4 mb-1">Territorio</h2>
+              </div>
+            </div>
+
+            <!-- Slide 2: Subparcelas -->
+            <div class="carousel-item">
+              <div class="ratio ratio-21x9">
+                <img src="https://wwflac.awsassets.panda.org/img/original/_dsc0300.jpg"
+                     class="w-100 h-100 object-fit-cover"
+                     alt="Subparcelas - 500 m²">
+              </div>
+              <div class="carousel-caption">
+                <h2 class="h4 mb-1">Tomas de muestras</h2>
+              </div>
+            </div>
+
+            <!-- Slide 3: Árboles -->
+            <div class="carousel-item">
+              <div class="ratio ratio-21x9">
+                <img src="https://infona.gov.py/wp-content/uploads/2024/05/inventario-1-scaled.jpeg"
+                     class="w-100 h-100 object-fit-cover"
+                     alt="Árboles - DAP ≥ 10 cm">
+              </div>
+              <div class="carousel-caption">
+                <h2 class="h4 mb-1">Monitoreo en campo</h2>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Controles -->
+          <button class="carousel-control-prev" type="button" data-bs-target="#ifnCarouselMuestreo" data-bs-slide="prev" aria-label="Anterior">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          </button>
+          <button class="carousel-control-next" type="button" data-bs-target="#ifnCarouselMuestreo" data-bs-slide="next" aria-label="Siguiente">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+    
+    <!-- Sección: Impacto y Logros -->
+    <section id="impacto" class="impact-section py-5">
+      <div class="container-xl">
+        <div class="row mb-5">
+          <div class="col-lg-8 mx-auto text-center">
+            <h2 class="display-5 fw-bold mb-3">Impacto y Logros</h2>
+            <p class="lead text-muted">Contribuyendo al conocimiento y conservación de los bosques colombianos.</p>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center p-4">
+                <i class="bi bi-tree-fill display-4 text-success mb-3"></i>
+                <h5>59.7%</h5>
+                <p class="text-muted">Del territorio nacional con cobertura boscosa</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center p-4">
+                <i class="bi bi-flower1 display-4 text-primary mb-3"></i>
+                <h5>5,600+</h5>
+                <p class="text-muted">Especies de árboles registradas</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center p-4">
+                <i class="bi bi-map display-4 text-warning mb-3"></i>
+                <h5>32</h5>
+                <p class="text-muted">Departamentos con inventario activo</p>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+              <div class="card-body text-center p-4">
+                <i class="bi bi-people display-4 text-info mb-3"></i>
+                <h5>250+</h5>
+                <p class="text-muted">Profesionales capacitados</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-5">
+          <div class="col-lg-10 mx-auto">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body p-4">
+                <h5 class="card-title mb-4">Aplicaciones del IFN</h5>
+                <div class="row">
+                  <div class="col-md-6">
+                    <h6><i class="bi bi-check-square me-2 text-success"></i>Políticas Públicas</h6>
+                    <p class="small text-muted">Información para la formulación de políticas forestales y ambientales</p>
+                    
+                    <h6><i class="bi bi-check-square me-2 text-success"></i>Cambio Climático</h6>
+                    <p class="small text-muted">Cálculo de reservas de carbono para compromisos internacionales</p>
+                  </div>
+                  <div class="col-md-6">
+                    <h6><i class="bi bi-check-square me-2 text-success"></i>Conservación</h6>
+                    <p class="small text-muted">Identificación de áreas prioritarias para conservación</p>
+                    
+                    <h6><i class="bi bi-check-square me-2 text-success"></i>Investigación</h6>
+                    <p class="small text-muted">Base para estudios científicos y académicos</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Noticias y Actualizaciones -->
+    <section id="noticias" class="py-5">
+      <div class="container-xl">
+        <div class="row mb-5">
+          <div class="col-lg-8 mx-auto text-center">
+            <h2 class="display-5 fw-bold mb-3">Noticias y Actualizaciones</h2>
+            <p class="lead text-muted">Mantente informado sobre los avances del Inventario Forestal Nacional.</p>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6 col-lg-4">
+            <div class="card news-card h-100">
+              <div class="card-body">
+                <span class="badge bg-success mb-3">Nuevo</span>
+                <h5 class="card-title">Lanzamiento Plataforma Digital</h5>
+                <p class="card-text">Nueva versión del sistema IFN con capacidades mejoradas de análisis y reportes.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">15 Nov 2024</small>
+                  <a href="#" class="btn btn-sm btn-outline-primary">Leer más</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="card news-card h-100">
+              <div class="card-body">
+                <span class="badge bg-primary mb-3">Evento</span>
+                <h5 class="card-title">Taller Regional Andino</h5>
+                <p class="card-text">Capacitación para técnicos forestales en metodologías de inventario.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">28 Oct 2024</small>
+                  <a href="#" class="btn btn-sm btn-outline-primary">Leer más</a>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6 col-lg-4">
+            <div class="card news-card h-100">
+              <div class="card-body">
+                <span class="badge bg-warning mb-3">Investigación</span>
+                <h5 class="card-title">Nuevas Especies Descubiertas</h5>
+                <p class="card-text">Identificación de 3 nuevas especies arbóreas en la Amazonía colombiana.</p>
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-muted">5 Oct 2024</small>
+                  <a href="#" class="btn btn-sm btn-outline-primary">Leer más</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección: Socios y Colaboradores -->
+    <section class="py-5 bg-light">
+      <div class="container-xl">
+        <div class="row mb-4">
+          <div class="col-lg-8 mx-auto text-center">
+            <h3 class="fw-bold mb-3">Socios y Colaboradores</h3>
+            <p class="text-muted">Trabajamos en conjunto con instituciones nacionales e internacionales</p>
+          </div>
+        </div>
+        <div class="row align-items-center justify-content-center g-4">
+          <div class="col-6 col-md-3 text-center">
+            <img src="https://www.icde.gov.co/sites/default/files/2024-07/logos-icde_34.png" alt="Ministerio Ambiente" class="partner-logo">
+          </div>
+          <div class="col-6 col-md-3 text-center">
+            <img src="https://yt3.googleusercontent.com/pBGLMZwFzTtThD2q2GKTQcZpqRrQfnZoZpLoobhP6drPqYS-4aVDK3-DuCx0eKkUS8rwHwFNUg=s900-c-k-c0x00ffffff-no-rj" alt="IDEAM" class="partner-logo">
+          </div>
+          <div class="col-6 col-md-3 text-center">
+            <img src="https://pbs.twimg.com/profile_images/892379601695100929/Sf9SPg8G_400x400.jpg" alt="FAO" class="partner-logo">
+          </div>
+          <div class="col-6 col-md-3 text-center">
+            <img src="https://upload.wikimedia.org/wikipedia/en/d/d1/Logo_Parques_nacionales_Colombia.jpg" alt="Parques Nacionales" class="partner-logo">
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Call to Action Final -->
+    <section class="py-5" style="background: linear-gradient(135deg, var(--ifn-green) 0%, var(--ifn-blue) 100%); color: white;">
+      <div class="container-xl text-center">
+        <h2 class="display-6 fw-bold mb-3">¿Listo para contribuir al Inventario Forestal Nacional?</h2>
+        <p class="lead mb-4">Únete a nuestra red de profesionales y participa en la conservación de los bosques colombianos.</p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+          <button class="btn btn-light btn-lg rounded-pill px-4" onclick="App.go('login')">
+            <i class="bi bi-person-plus me-2"></i>Ingresa
+          </button>
+          <button class="btn btn-outline-light btn-lg rounded-pill px-4" onclick="App.go('mapa')">
+            <i class="bi bi-map me-2"></i>Explorar Visor
+          </button>
+          <button class="btn btn-outline-light btn-lg rounded-pill px-4" onclick="App.descargarManual()">
+            <i class="bi bi-download me-2"></i>Descargar Manual
+          </button>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- Login -->
+  <section id="view-login" class="view d-none">
+    <div class="container-xl py-4">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-6 col-lg-5">
+          <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+              <h1 class="h4 fw-bold text-center mb-3">Sistema del Inventario Forestal Nacional</h1>
+              <p class="text-center mb-4">Ingrese sus credenciales para acceder</p>
+              
+              <div id="loginMessage" class="alert alert-danger d-none"></div>
+              
+              <form id="formLogin" onsubmit="App.handleLogin(event)" class="needs-validation" novalidate>
+                <div class="mb-3">
+                  <label for="loginEmail" class="form-label">Correo electrónico</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                    <input type="email" class="form-control" id="loginEmail" placeholder="usuario@ifn.gov.co" required>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="loginPassword" class="form-label">Contraseña</label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                    <input type="password" class="form-control" id="loginPassword" placeholder="Ingrese su contraseña" required>
+                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                  </div>
+                </div>
+                
+                <div class="d-grid gap-2 mb-3">
+                  <button type="submit" class="btn btn-cta rounded-pill py-2">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Iniciar Sesión
+                  </button>
+                </div>
+              </form>
+              
+              <div class="text-center">
+                <small class="text-muted">Para acceder al sistema, contacte al administrador.</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Dashboard -->
+  <section id="view-dashboard" class="view d-none">
+    <div class="container-xl py-3">
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <strong>IFN • Inventario Forestal</strong>
+        <div>Bienvenido, <span id="userRole" class="fw-semibold"></span> (<span id="userEmail" class="text-muted"></span>)
+          <button class="btn btn-sm btn-outline-secondary rounded-pill ms-2" onclick="App.logout()"><i class="bi bi-door-closed me-1"></i> Cerrar sesión</button>
+        </div>
+      </div>
+      
+      <!-- Sección de borradores -->
+      <div id="borradoresSection" class="mb-4 d-none">
+        <div class="card border-warning">
+          <div class="card-header bg-warning bg-opacity-10 d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="bi bi-file-earmark-text me-2"></i>Borradores guardados</h5>
+            <span class="badge bg-warning" id="borradoresCount">0</span>
+          </div>
+          <div class="card-body">
+            <div id="listaBorradores"></div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Administrador -->
+      <div id="cardsAdministrador" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Gestión de Usuarios</h3>
+              <p class="small">Crear, modificar y desactivar usuarios del sistema</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('gestionUsuarios')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Coordinador -->
+      <div id="cardsCoordinador" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Asignar Conglomerado</h3>
+              <p class="small">Asignación de Conglomerados a Técnicos y Botanicos.</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('conglomerado')">Abrir</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Asignar Subparcela</h3>
+              <p class="small">Asignación de Subparcelas a Técnicos y Botanicos.</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('subparcela')">Abrir</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Generar Reportes</h3>
+              <p class="small">Consolidar y exportar información</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('reportes')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Técnico -->
+      <div id="cardsTecnico" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Registrar Árbol</h3>
+              <p class="small">Registro de árboles (Pendiente validación Botanico.) </p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Dashboard Botánico -->
+      <div id="cardsBotanico" class="row g-3 d-none">
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Registrar Árbol</h3>
+              <p class="small">Registro de árboles</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+          <div class="card h-100 shadow-sm border-0">
+            <div class="card-body text-center">
+              <h3 class="h6 fw-bold">Muestreo Botánico</h3>
+              <p class="small">Validación científica de árboles</p>
+              <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('validacion')">Abrir</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gestión de Usuarios (Solo Administrador) - CORREGIDO -->
+  <section id="view-gestionUsuarios" class="view d-none">
+    <div class="container-xl py-3">
+      <h2 class="h4 mb-3">Gestión de Usuarios</h2>
+      <p class="text-muted mb-3">Administrar usuarios del sistema y asignar roles.</p>
+      
+      <!-- Validación de permisos - SOLO se muestra si NO es administrador -->
+      <div id="permisoGestionUsuarios" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Administrador puede gestionar usuarios.
+      </div>
+      
+      <!-- Contenido real de gestión de usuarios - SOLO se muestra si ES administrador -->
+      <div id="contenidoGestionUsuarios" class="d-none">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-people me-2"></i>Lista de Usuarios del Sistema</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <button class="btn btn-success rounded-pill" onclick="App.mostrarModalNuevoUsuario()">
+                <i class="bi bi-person-plus me-1"></i>Nuevo Usuario
+              </button>
+              <span class="badge bg-primary" id="totalUsuarios">Total: 0 usuarios</span>
+            </div>
+            
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre Completo</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Fecha Creación</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tablaUsuarios">
+                  <!-- Los usuarios se cargarán dinámicamente -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        
+        <div class="text-end mt-3">
+          <button class="btn btn-outline-secondary rounded-pill" onclick="App.go('dashboard')">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MAPA -->
+  <section id="view-mapa" class="view d-none">
+    <div class="container-xl py-3">
+      <h2 class="h4 mb-3">Visor geográfico</h2>
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+        <button class="btn btn-outline-cta btn-sm rounded-pill" onclick="App.mapa.centerBga()"><i class="bi bi-crosshair me-1"></i> Centrar Bucaramanga</button>
+        <button class="btn btn-outline-cta btn-sm rounded-pill" onclick="App.mapa.fit()"><i class="bi bi-arrows-fullscreen me-1"></i> Ajustar a datos</button>
+        <button class="btn btn-outline-cta btn-sm rounded-pill" onclick="App.mapa.clearMarkers()"><i class="bi bi-trash me-1"></i> Limpiar marcadores</button>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="chkPick" checked>
+          <label class="form-check-label small" for="chkPick">Capturar coordenadas al hacer clic</label>
+        </div>
+      </div>
+      
+      <div id="mapError" class="map-error d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Error de conexión</strong> - No se pudieron cargar los mapas. Verifica tu conexión a internet.
+      </div>
+      
+      <div id="map" class="map rounded-4 border"></div>
+      
+      <div class="mt-2">
+        <small class="text-muted">Leyenda: </small>
+        <span class="badge bg-primary me-2"><i class="bi bi-geo-alt"></i> Conglomerado</span>
+        <span class="badge bg-success"><i class="bi bi-circle"></i> Subparcela</span>
+      </div>
+      
+      <p class="text-muted small mt-2">Tip: si estás en Conglomerado/Subparcela y marcas "Capturar…", al hacer clic en el mapa se autocompleta Lat/Long.</p>
+      <div class="text-end"><button class="btn btn-outline-secondary rounded-pill mt-2" onclick="App.go('dashboard')">Volver</button></div>
+    </div>
+  </section>
+
+  <!-- Formularios -->
+  <section id="view-conglomerado" class="view d-none">
+    <div class="container-xl py-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Registrar Conglomerado</h2>
+        <span id="autosaveStatusCong" class="autosave-status d-none"></span>
+      </div>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoConglomerado" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede asignar conglomerados.
+      </div>
+      
+      <div id="msgCong" class="my-2"></div>
+      <form id="formConglomerado" onsubmit="App.saveConglomerado(event)" class="row g-3 needs-validation" novalidate>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Código <span class="text-danger">*</span></label>
+          <input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Región <span class="text-danger">*</span></label>
+          <input name="region" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Estado <span class="text-danger">*</span></label>
+          <select name="estado" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+            <option value="pendiente">Pendiente</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Latitud <span class="text-danger">*</span></label>
+          <input name="latitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -12.345678" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Longitud <span class="text-danger">*</span></label>
+          <input name="longitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -76.543210" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Altitud (m)</label>
+          <input name="altitud" class="form-control" type="number" step="0.1" min="0" max="6000">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Fecha Inicio <span class="text-danger">*</span></label>
+          <input type="date" name="fechaInicio" class="form-control" max="<?= date('Y-m-d') ?>" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Fecha Final <span class="text-danger">*</span></label>
+          <input type="date" name="fechaFinal" class="form-control" max="<?= date('Y-m-d') ?>" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Técnico Asignado</label>
+          <select name="tecnicoAsignado" id="tecnicoAsignado" class="form-select">
+            <option value="">Seleccionar técnico...</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Botánico Asignado</label>
+          <select name="botanicoAsignado" id="botanicoAsignado" class="form-select">
+            <option value="">Seleccionar botánico...</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
+        
+        <!-- Adjuntos -->
+        <div class="col-12">
+          <label class="form-label">Adjuntos</label>
+          <div class="file-input-container">
+            <button type="button" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-paperclip me-2"></i>Seleccionar archivos
+            </button>
+            <input type="file" name="adjuntos" multiple accept=".jpg,.jpeg,.png,.pdf,.doc,.docx" class="form-control">
+          </div>
+          <div class="file-list mt-2" id="fileListCong"></div>
+          <small class="text-muted">Formatos permitidos: JPG, PNG, PDF, DOC (Máx. 5 archivos)</small>
+        </div>
+        
+        <div class="col-12 d-flex justify-content-end gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-warning rounded-pill" onclick="App.limpiarBorrador('conglomerado')">
+            <i class="bi bi-trash me-1"></i> Limpiar borrador
+          </button>
+          <button class="btn btn-outline-secondary rounded-pill" type="button" onclick="App.go('dashboard')">Volver</button>
+          <button class="btn btn-cta rounded-pill"><i class="bi bi-check2-circle me-1"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="view-subparcela" class="view d-none">
+    <div class="container-xl py-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Registrar Subparcela</h2>
+        <span id="autosaveStatusSub" class="autosave-status autosave-saved d-none">Auto-guardado</span>
+      </div>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoSubparcela" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede registrar subparcelas.
+      </div>
+      
+      <div id="msgSub" class="my-2"></div>
+      <form id="formSubparcela" onsubmit="App.saveSubparcela(event)" class="row g-3 needs-validation" novalidate>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Código <span class="text-danger">*</span></label>
+          <input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Número Subparcela <span class="text-danger">*</span></label>
+          <select name="numeroSubparcela" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Fecha Levantamiento <span class="text-danger">*</span></label>
+          <input type="date" name="fechaLevantamiento" class="form-control" max="<?= date('Y-m-d') ?>" required>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Cobertura <span class="text-danger">*</span></label>
+          <select name="cobertura" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            <option value="AFLORAMIENTO ROCOSO">AFLORAMIENTO ROCOSO</option>
+            <option value="BOSQUE DE TIERRA FIRME">BOSQUE DE TIERRA FIRME</option>
+            <option value="CULTIVOS">CULTIVOS</option>
+            <option value="ARBUSTAL">ARBUSTAL</option>
+            <option value="BOSQUE INUNDABLE">BOSQUE INUNDABLE</option>
+            <option value="HERBAZAL">HERBAZAL</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Alteraciones</label>
+          <select name="alteraciones" class="form-select" multiple>
+            <option value="Matorral">Matorral</option>
+            <option value="Pastizal">Pastizal</option>
+            <option value="Suelo Desnudo">Suelo Desnudo</option>
+            <option value="Pantano">Pantano</option>
+            <option value="Rastrojo">Rastrojo</option>
+            <option value="Zona Urbana">Zona Urbana</option>
+          </select>
+          <small class="text-muted">Mantén Ctrl para seleccionar múltiples opciones</small>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Conglomerado <span class="text-danger">*</span></label>
+          <select name="conglomerado" id="spCong" class="form-select" required></select>
+        </div>
+        <div class="col-12 d-flex justify-content-end gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-warning rounded-pill" onclick="App.limpiarBorrador('subparcela')">
+            <i class="bi bi-trash me-1"></i> Limpiar borrador
+          </button>
+          <button class="btn btn-outline-secondary rounded-pill" type="button" onclick="App.go('dashboard')">Volver</button>
+          <button class="btn btn-cta rounded-pill"><i class="bi bi-check2-circle me-1"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="view-arbol" class="view d-none">
+    <div class="container-xl py-3">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h4 mb-0">Registrar Árbol</h2>
+        <span id="autosaveStatusArb" class="autosave-status autosave-saved d-none">Auto-guardado</span>
+      </div>
+      
+      <!-- Información de estado según rol -->
+      <div id="infoEstadoArbol" class="alert alert-info d-none">
+        <i class="bi bi-info-circle me-2"></i>
+        <span id="textoEstadoArbol">El árbol se registrará como pendiente de validación.</span>
+      </div>
+      
+      <div id="msgArb" class="my-2"></div>
+      <form id="formArbol" onsubmit="App.saveArbol(event)" class="row g-3 needs-validation" novalidate>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Conglomerado <span class="text-danger">*</span></label>
+          <select name="conglomerado" id="arCong" class="form-select" required onchange="App.updateSubparcelas(this.value)"></select>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Subparcela <span class="text-danger">*</span></label>
+          <select name="subparcela" id="arSub" class="form-select" required></select>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Nombre científico <span class="text-danger">*</span></label>
+          <input name="nombreCientifico" class="form-control nombre-cientifico" placeholder="Género especie" required>
+          <small class="text-muted">Formato: Género especie (en cursiva)</small>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Nombres comunes</label>
+          <input name="nombresComunes" class="form-control" placeholder="Roble, nogal, etc.">
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Categoría <span class="text-danger">*</span></label>
+          <select name="categoria" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            <option value="Latifoliado">Latifoliado</option>
+            <option value="Conífera">Conífera</option>
+            <option value="Palma">Palma</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">DAP (cm) <span class="text-danger">*</span></label>
+          <input name="dap" class="form-control" type="number" step="0.1" min="0" max="500" required>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Altura Total (m) <span class="text-danger">*</span></label>
+          <input name="alturaTotal" class="form-control" type="number" step="0.1" min="0" max="100" required>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Altura Fuste (m)</label>
+          <input name="alturaFuste" class="form-control" type="number" step="0.1" min="0" max="100">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Usos</label>
+          <input name="usos" class="form-control" placeholder="maderable, medicinal, sombra…" maxlength="200">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
+        
+        <!-- Adjuntos para árbol -->
+        <div class="col-12">
+          <label class="form-label">Evidencias (fotos, muestras) - Opcional</label>
+          <div class="file-input-container">
+            <button type="button" class="btn btn-outline-secondary w-100">
+              <i class="bi bi-camera me-2"></i>Agregar evidencias
+            </button>
+            <input type="file" name="evidencias" multiple accept=".jpg,.jpeg,.png,.pdf" class="form-control">
+          </div>
+          <div class="file-list mt-2" id="fileListArb"></div>
+          <small class="text-muted">Fotos de hojas, corteza, frutos, etc. (Formatos: JPG, PNG, PDF)</small>
+        </div>
+        
+        <div class="col-12 d-flex justify-content-end gap-2 flex-wrap">
+          <button type="button" class="btn btn-outline-warning rounded-pill" onclick="App.limpiarBorrador('arbol')">
+            <i class="bi bi-trash me-1"></i> Limpiar borrador
+          </button>
+          <button class="btn btn-outline-secondary rounded-pill" type="button" onclick="App.go('dashboard')">Volver</button>
+          <button class="btn btn-cta rounded-pill"><i class="bi bi-check2-circle me-1"></i> Guardar</button>
+        </div>
+      </form>
+    </div>
+  </section>
+
+  <section id="view-validacion" class="view d-none">
+    <div class="container-xl py-3">
+      <h2 class="h4 mb-3">Validación Taxonómica</h2>
+      <p class="text-muted mb-3">Revisar y confirmar la identidad científica de los árboles registrados.</p>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoValidacion" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Botánico puede realizar validación taxonómica.
+      </div>
+      
+      <div class="table-responsive shadow-sm rounded-4 border bg-body">
+        <table class="table table-hover mb-0" id="tablaPendientes">
+          <thead class="table-light">
+            <tr>
+              <th>ID</th>
+              <th>Conglomerado</th>
+              <th>Subparcela</th>
+              <th>Nombre científico</th>
+              <th>Estado</th>
+              <th>Fecha registro</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="text-end mt-2">
+        <button class="btn btn-outline-secondary rounded-pill" onclick="App.go('dashboard')">Volver</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-reportes" class="view d-none">
+    <div class="container-xl py-3">
+      <h2 class="h4 mb-3">Generar Reportes</h2>
+      <p class="text-muted">Consolidar información de conglomerados, subparcelas, árboles y validaciones taxonómicas.</p>
+      
+      <!-- Validación de permisos -->
+      <div id="permisoReportes" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede generar reportes.
+      </div>
+      
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+          <h5 class="card-title"><i class="bi bi-funnel me-2"></i>Filtros de reporte</h5>
+          <div class="row g-2 align-items-end">
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Fecha desde</label>
+              <input type="date" id="fFechaDesde" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Fecha hasta</label>
+              <input type="date" id="fFechaHasta" class="form-control form-control-sm">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Zona / Conglomerado</label>
+              <input id="fZona" class="form-control form-control-sm" placeholder="Código o región">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Especie</label>
+              <input id="fEspecie" class="form-control form-control-sm" placeholder="Nombre científico">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Técnico/Validador</label>
+              <input id="fTecnico" class="form-control form-control-sm" placeholder="Responsable">
+            </div>
+            <div class="col-6 col-md-3">
+              <label class="form-label small">Estado</label>
+              <select id="fEstado" class="form-select form-select-sm">
+                <option value="">Todos</option>
+                <option value="pendiente_validacion">Pendiente</option>
+                <option value="validado">Validado</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-12 d-flex gap-2 mt-3">
+            <button class="btn btn-cta rounded-pill btn-sm" onclick="App.renderReportes()">
+              <i class="bi bi-funnel me-1"></i> Aplicar filtros
+            </button>
+            <button class="btn btn-outline-cta rounded-pill btn-sm" onclick="App.exportCSV()">
+              <i class="bi bi-filetype-csv me-1"></i> Exportar CSV
+            </button>
+            <button class="btn btn-outline-cta rounded-pill btn-sm" onclick="App.exportPDF()">
+              <i class="bi bi-filetype-pdf me-1"></i> Exportar PDF
+            </button>
+            <!-- Botones nuevos para datos de prueba -->
+            <button class="btn btn-outline-info rounded-pill btn-sm" onclick="App.generarDatosPrueba()">
+              <i class="bi bi-database-add me-1"></i> Datos Prueba
+            </button>
+            <button class="btn btn-outline-warning rounded-pill btn-sm" onclick="App.limpiarDatosPrueba()">
+              <i class="bi bi-database-dash me-1"></i> Limpiar Pruebas
+            </button>
+            <button class="btn btn-outline-success rounded-pill btn-sm" onclick="App.mostrarEstadisticas()">
+              <i class="bi bi-graph-up me-1"></i> Estadísticas
+            </button>
+            <button class="btn btn-outline-secondary rounded-pill btn-sm" onclick="App.limpiarFiltros()">
+              <i class="bi bi-arrow-clockwise me-1"></i> Limpiar
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="reporteResultados">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="mb-0">Resultados del reporte</h5>
+          <span id="contadorResultados" class="badge bg-primary">0 registros</span>
+        </div>
+        
+        <div id="sinResultados" class="alert alert-info d-none">
+          <i class="bi bi-info-circle me-2"></i>
+          No hay información disponible para los filtros seleccionados.
+        </div>
+        
+        <div class="table-responsive shadow-sm rounded-4 border bg-body">
+          <table class="table table-striped align-middle mb-0" id="tablaReportes">
+            <thead class="table-light">
+              <tr>
+                <th>ID</th>
+                <th>Conglomerado</th>
+                <th>Subparcela</th>
+                <th>Nombre científico</th>
+                <th>Estado</th>
+                <th>Validado por</th>
+                <th>Fecha</th>
+                <th>DAP (cm)</th>
+                <th>Altura (m)</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      
+      <div class="text-end mt-3">
+        <button class="btn btn-outline-secondary rounded-pill" onclick="App.go('dashboard')">Volver al dashboard</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="mt-auto">
+    <div class="container-xl">
+      <div class="row g-4">
+        <div class="col-12 col-md-4">
+          <h5 class="footer-title">Inventario Forestal Nacional</h5>
+          <p class="small">Sistema de monitoreo forestal para la conservación y gestión sostenible de los bosques colombianos.</p>
+          <div class="mt-3">
+            <a href="#" class="social-icon"><i class="bi bi-twitter-x"></i></a>
+            <a href="#" class="social-icon"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="social-icon"><i class="bi bi-instagram"></i></a>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <h6 class="footer-title">Enlaces Rápidos</h6>
+          <ul class="list-unstyled small">
+            <li><a href="#" onclick="App.go('landing')">Inicio</a></li>
+            <li><a href="#" onclick="App.go('mapa')">Visor</a></li>
+          </ul>
+        </div>
+        <div class="col-6 col-md-2">
+          <h6 class="footer-title">Recursos</h6>
+          <ul class="list-unstyled small">
+            <li><a href="#" onclick="App.descargarManual()">Manual de usuario</a></li>
+            <li><a href="#" onclick="App.descargarGuiaTaxonomica()">Guía taxonómica</a></li>
+            <li><a href="#" onclick="App.descargarProtocolos()">Protocolos de campo</a></li>
+            <li><a href="#" onclick="App.descargarPublicaciones()">Publicaciones</a></li>
+            <li><a href="#" onclick="App.descargarDatosAbiertos()">Datos abiertos</a></li>
+          </ul>
+        </div>
+        <div class="col-12 col-md-4">
+          <h6 class="footer-title">Contacto</h6>
+          <p class="small">
+            <i class="bi bi-envelope me-2"></i> contacto@ifn.gov.co<br>
+            <i class="bi bi-geo-alt me-2"></i> Ministerio de Ambiente y Desarrollo Sostenible<br>
+            <span class="ms-4">Bogotá D.C., Colombia</span>
+          </p>
+          <div class="mt-3">
+            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="App.mostrarSoporte()">
+              <i class="bi bi-chat-dots me-1"></i> Soporte Técnico
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="copyright text-center small">
+        © <span id="year"></span> Inventario Forestal Nacional • Ministerio de Ambiente y Desarrollo Sostenible • República de Colombia
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
