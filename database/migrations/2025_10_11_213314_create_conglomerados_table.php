@@ -17,11 +17,10 @@ return new class extends Migration {
             $table->decimal('latitud', 10, 6);
             $table->decimal('longitud', 10, 6);
             $table->text('observaciones')->nullable();
-            $table->json('adjuntos')->nullable(); // nombres de archivos
+            $table->json('adjuntos')->nullable();
             $table->timestamps();
         });
     }
-
     public function down(): void {
         Schema::dropIfExists('conglomerados');
     }

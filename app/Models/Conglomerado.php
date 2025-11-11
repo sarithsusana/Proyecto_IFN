@@ -18,11 +18,5 @@ class Conglomerado extends Model
         'longitud' => 'decimal:6',
     ];
 
-    public function subparcelas() {
-        return $this->hasMany(Subparcela::class);
-    }
-
-    public function arboles() {
-        return $this->hasMany(Arbol::class);
-    }
+    public function subparcelas() { return $this->hasMany(Subparcela::class); }
 }

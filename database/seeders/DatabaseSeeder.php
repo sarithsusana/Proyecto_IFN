@@ -2,27 +2,29 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
-// use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => Hash::make('password'),
-                'email_verified_at' => now(),
-            ]
+        User::updateOrCreate(
+            ['email'=>'admin@ifn.gov.co'],
+            ['name'=>'Admin IFN','role'=>'Administrador','password'=>Hash::make('Admin123*'),'active'=>true]
+        );
+        User::updateOrCreate(
+            ['email'=>'coordinador@ifn.gov.co'],
+            ['name'=>'Coordinador IFN','role'=>'Coordinador','password'=>Hash::make('Coord123*'),'active'=>true]
+        );
+        User::updateOrCreate(
+            ['email'=>'tecnico@ifn.gov.co'],
+            ['name'=>'Tecnico IFN','role'=>'Tecnico','password'=>Hash::make('Tecnico123*'),'active'=>true]
+        );
+        User::updateOrCreate(
+            ['email'=>'botanico@ifn.gov.co'],
+            ['name'=>'Botanico IFN','role'=>'Botanico','password'=>Hash::make('Botanico123*'),'active'=>true]
         );
     }
 }
