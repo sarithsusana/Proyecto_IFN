@@ -1,59 +1,134 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Auth\AuthController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
 use App\Http\Controllers\Api\ConglomeradoController;
 use App\Http\Controllers\Api\SubparcelaController;
 use App\Http\Controllers\Api\ArbolController;
+use App\Http\Controllers\Api\PersonaController;
 
 /*
-|-------------------------------
-| Rutas públicas (login)
-|-------------------------------
+|--------------------------------------------------------------------------
+| Rutas API
+|--------------------------------------------------------------------------
+| Por ahora dejamos abiertas (sin auth:sanctum) las rutas que consume
+| la app estática (app.js).
 */
-Route::post('/login', [AuthController::class, 'login']);
 
-/*
-|-------------------------------
-| Rutas protegidas
-|-------------------------------
-*/
-Route::middleware('auth:sanctum')->group(function () {
-    // Sesión
-    Route::get('/me', [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
+/* =========================
+ * LOGIN (SIN SANCTUM)
+ * ========================= */
+Route::post('/login', function (Request $request) {
 
-    // Listas básicas para selects
-    Route::get('/conglomerados/list', [ConglomeradoController::class, 'list']);
-    Route::get('/conglomerados/{conglomerado}/subparcelas', [SubparcelaController::class, 'listByConglomerado']);
+    try {
+        // Validar datos del formulario
+        $cred = $request->validate([
+            'email'    => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
 
-    // Conglomerado (solo Coordinador)
-    Route::middleware('role:Coordinador')->group(function () {
-        Route::get('/conglomerados', [ConglomeradoController::class, 'index']);
-        Route::post('/conglomerados', [ConglomeradoController::class, 'store']);
-        Route::put('/conglomerados/{conglomerado}', [ConglomeradoController::class, 'update']);
-        Route::delete('/conglomerados/{conglomerado}', [ConglomeradoController::class, 'destroy']);
+        // Buscar persona por correo
+        $persona = DB::table('persona')
+            ->where('correo', $cred['email'])
+            ->first();
 
-        Route::get('/subparcelas', [SubparcelaController::class, 'index']);
-        Route::post('/subparcelas', [SubparcelaController::class, 'store']);
-        Route::put('/subparcelas/{subparcela}', [SubparcelaController::class, 'update']);
-        Route::delete('/subparcelas/{subparcela}', [SubparcelaController::class, 'destroy']);
-    });
+        if (!$persona) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Usuario y/o contraseña incorrectos',
+            ], 401);
+        }
 
-    // Árboles (Técnico y Botánico pueden registrar)
-    Route::middleware('role:Tecnico,Botanico,Coordinador')->group(function () {
-        Route::get('/arboles', [ArbolController::class, 'index']);
-        Route::post('/arboles', [ArbolController::class, 'store']);
-        Route::put('/arboles/{arbol}', [ArbolController::class, 'update']);
-        Route::delete('/arboles/{arbol}', [ArbolController::class, 'destroy']);
-    });
+        // Comparar contraseña en claro
+        if (($persona->contraseña ?? null) !== $cred['password']) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Usuario y/o contraseña incorrectos',
+            ], 401);
+        }
 
-    // Validación (solo Botánico)
-    Route::middleware('role:Botanico,Coordinador')->group(function () {
-        Route::post('/arboles/{arbol}/validar', [ArbolController::class, 'validar']);
-    });
+        // Mapear rol para el front
+        $rolBD = strtolower($persona->tipo_usuario ?? '');
 
-    // Reportes / Estadísticas
-    Route::get('/reportes/arboles', [ArbolController::class, 'index']);
-    Route::get('/reportes/stats', [ArbolController::class, 'stats']);
+        if (str_starts_with($rolBD, 'admin')) {
+            $rolFront = 'Administrador';
+        } elseif (str_starts_with($rolBD, 'coor')) {
+            $rolFront = 'Coordinador';
+        } elseif (str_starts_with($rolBD, 'bot')) {
+            $rolFront = 'Botanico';
+        } else {
+            $rolFront = 'Tecnico';
+        }
+
+        return response()->json([
+            'ok'   => true,
+            'user' => [
+                'email'  => $persona->correo,
+                'nombre' => $persona->nombre_completo,
+                'role'   => $rolFront,
+            ],
+        ]);
+
+    } catch (\Throwable $e) {
+        return response()->json([
+            'ok'      => false,
+            'message' => 'Error interno en el servidor',
+        ], 500);
+    }
 });
+
+
+/* ============================
+ * PERSONAS (GESTIÓN DE USUARIOS)
+ * Identificador = correo (PK)
+ * ============================ */
+
+Route::get('/personas',              [PersonaController::class, 'index']);
+Route::get('/personas/{correo}',     [PersonaController::class, 'show']);
+Route::post('/personas',             [PersonaController::class, 'store']);
+Route::put('/personas/{correo}',     [PersonaController::class, 'update']);
+Route::delete('/personas/{correo}',  [PersonaController::class, 'destroy']);
+
+
+/* =====================
+ * CONGLOMERADOS
+ * ===================== */
+
+Route::post('/conglomerados', [ConglomeradoController::class, 'store']);
+Route::get('/conglomerados',      [ConglomeradoController::class, 'index']);
+Route::get('/conglomerados/list', [ConglomeradoController::class, 'index']);
+
+Route::get(
+    '/conglomerados/{codigo}/subparcelas',
+    [SubparcelaController::class, 'listByConglomerado']
+);
+
+
+/* =====================
+ * SUBPARCELAS
+ * ===================== */
+
+Route::post('/subparcelas', [SubparcelaController::class, 'store']);
+Route::get('/subparcelas',          [SubparcelaController::class, 'index']);
+Route::get('/subparcelas/{id}',     [SubparcelaController::class, 'show']);
+Route::put('/subparcelas/{id}',     [SubparcelaController::class, 'update']);
+Route::delete('/subparcelas/{id}',  [SubparcelaController::class, 'destroy']);
+
+
+/* =====================
+ * ÁRBOLES
+ * ===================== */
+
+Route::get('/arboles',      [ArbolController::class, 'index']);
+Route::get('/arboles/{id}', [ArbolController::class, 'show']);
+Route::post('/arboles',     [ArbolController::class, 'store']);
+Route::put('/arboles/{id}',    [ArbolController::class, 'update']);
+Route::delete('/arboles/{id}', [ArbolController::class, 'destroy']);
+
+Route::get('/arboles-pendientes', [ArbolController::class, 'pendientes']);
+Route::put('/arboles/{id}/validar', [ArbolController::class, 'validar']);
+
+Route::get('/reportes/arboles', [ArbolController::class, 'index']);
+Route::get('/reportes/stats',   [ArbolController::class, 'stats']);

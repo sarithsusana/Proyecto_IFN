@@ -3,92 +3,149 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Arbol;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class ArbolController extends Controller
 {
-    public function index(Request $request) {
-        $q = Arbol::with(['conglomerado:id,codigo','subparcela:id,codigo','validador:id,name']);
+    /**
+     * Listar árboles (por ahora un listado simple).
+     */
+    public function index()
+    {
+        // Usamos la tabla REAL "arbol" (singular)
+        $arboles = DB::table('arbol')->get();
 
-        if ($cg = $request->get('conglomerado')) $q->whereHas('conglomerado', fn($qq)=>$qq->where('codigo','like',"%$cg%"));
-        if ($sp = $request->get('subparcela'))  $q->whereHas('subparcela',  fn($qq)=>$qq->where('codigo','like',"%$sp%"));
-        if ($es = $request->get('especie'))     $q->where('nombre_cientifico','like',"%$es%");
-        if ($st = $request->get('estado'))      $q->where('estado',$st);
-
-        if ($desde = $request->get('fecha_desde')) $q->whereDate('created_at','>=',$desde);
-        if ($hasta = $request->get('fecha_hasta')) $q->whereDate('created_at','<=',$hasta);
-
-        return $q->orderBy('created_at','desc')->paginate(50);
+        return response()->json($arboles);
     }
 
-    public function store(Request $request) {
+    /**
+     * Guardar árbol nuevo desde el front.
+     * Recibe el payload que envías desde saveArbol() en app.js
+     */
+    public function store(Request $request)
+    {
+        // Validamos solo lo necesario para que no truene
         $data = $request->validate([
-            'conglomerado_id'   => 'required|exists:conglomerados,id',
-            'subparcela_id'     => 'required|exists:subparcelas,id',
-            'nombre_cientifico' => ['required','string','regex:/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){1,2}$/'],
-            'nombres_comunes'   => 'nullable|string',
-            'categoria'         => ['required', Rule::in(['Latifoliado','Conífera','Palma','Otro'])],
-            'dap'               => 'required|numeric|min:0|max:500',
-            'altura'            => 'required|numeric|min:0|max:100',
-            'latitud'           => 'nullable|numeric|between:-90,90',
-            'longitud'          => 'nullable|numeric|between:-180,180',
-            'azimut'            => 'nullable|integer|min:0|max:360',
-            'usos'              => 'nullable|string|max:200',
-            'observaciones'     => 'nullable|string|max:500',
-            'evidencias'        => 'nullable|array',
+            'id_conglomerado'      => 'required|integer',
+            'id_subparcela'        => 'required|integer',
+
+            'codigo_conglomerado'  => 'required|string|max:100',
+            'codigo_subparcela'    => 'required|string|max:100',
+
+            'categoria'            => 'nullable|string|max:100',
+            'distancia'            => 'nullable|numeric',
+
+            'nombre_cientifico'    => 'nullable|string|max:255',
+            'nombre_comun'         => 'nullable|string|max:255',
+            'especie'              => 'nullable|string|max:255',
+
+            'dap'                  => 'nullable|numeric',
+            'altura_fuste'         => 'nullable|numeric',
+            'altura_total'         => 'nullable|numeric',
+
+            'uso_comun'            => 'nullable|string|max:255',
+            'observaciones'        => 'nullable|string',
         ]);
 
-        $data['registrado_por'] = $request->user()->id;
-        // Si es Botánico se valida de una:
-        if ($request->user()->role === 'Botanico') {
-            $data['estado'] = 'validado';
-            $data['validado_por'] = $request->user()->id;
+        // Insertamos en la tabla REAL "arbol"
+        $id = DB::table('arbol')->insertGetId([
+            'id_conglomerado'   => $data['id_conglomerado'],
+            'id_subparcela'     => $data['id_subparcela'],
+            'categoria'         => $data['categoria']        ?? null,
+            'distancia'         => $data['distancia']        ?? null,
+            'nombre_cientifico' => $data['nombre_cientifico']?? null,
+            'nombre_comun'      => $data['nombre_comun']     ?? null,
+            'especie'           => $data['especie']          ?? null,
+            'dap'               => $data['dap']              ?? null,
+            'altura_fuste'      => $data['altura_fuste']     ?? null,
+            'altura_total'      => $data['altura_total']     ?? null,
+            'uso_comun'         => $data['uso_comun']        ?? null,
+            'observaciones'     => $data['observaciones']    ?? null,
+            'estado'            => 'pendiente', // siempre pendiente de validación
+        ]);
+
+        $arbol = DB::table('arbol')->where('id_arbol', $id)->first();
+
+        return response()->json([
+            'ok'    => true,
+            'arbol' => $arbol,
+        ]);
+    }
+
+    /**
+     * Árboles pendientes de validación (para la tabla del botánico).
+     *
+     * Usa:
+     *   tabla "arbol" (id_arbol, id_conglomerado, id_subparcela, nombre_cientifico, estado)
+     *   tabla "conglomerado" (id_conglomerado, codigo_conglomerado)
+     *   tabla "subparcela"   (id_subparcela, codigo_subparcela)
+     */
+    public function pendientes()
+{
+    $rows = DB::table('arbol as a')
+        ->leftJoin('conglomerado as c', 'c.id_conglomerado', '=', 'a.id_conglomerado')
+        ->leftJoin('subparcela as s', 's.id_subparcela', '=', 'a.id_subparcela')
+        ->select(
+            'a.id_arbol',
+            'c.codigo_conglomerado',
+            's.codigo_subparcela',
+            'a.nombre_cientifico',
+            'a.estado'
+        )
+        // aquí el cambio importante 👇
+        ->whereIn('a.estado', ['pendiente', 'pendiente_validacion'])
+        ->orderBy('a.id_arbol')
+        ->get();
+
+    return response()->json($rows);
+}
+
+
+    /**
+     * Validar un árbol (botánico).
+     * El front le manda:
+     *   - nombre_cientifico
+     *   - observaciones_validacion (opcional)
+     */
+    public function validar(Request $request, $id)
+    {
+        $data = $request->validate([
+            'nombre_cientifico'        => 'required|string|max:255',
+            'observaciones_validacion' => 'nullable|string',
+        ]);
+
+        $arbol = DB::table('arbol')->where('id_arbol', $id)->first();
+
+        if (!$arbol) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Árbol no encontrado',
+            ], 404);
         }
 
-        return Arbol::create($data);
-    }
+        // concatenamos las observaciones de validación (si vienen)
+        $observaciones = $arbol->observaciones;
+        if (!empty($data['observaciones_validacion'])) {
+            $extra = 'Validación: '.$data['observaciones_validacion'];
+            $observaciones = $observaciones
+                ? $observaciones.' | '.$extra
+                : $extra;
+        }
 
-    public function update(Request $request, Arbol $arbol) {
-        $data = $request->validate([
-            'nombre_cientifico' => ['sometimes','required','string','regex:/^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){1,2}$/'],
-            'nombres_comunes'   => 'nullable|string',
-            'categoria'         => ['sometimes','required', Rule::in(['Latifoliado','Conífera','Palma','Otro'])],
-            'dap'               => 'sometimes|required|numeric|min:0|max:500',
-            'altura'            => 'sometimes|required|numeric|min:0|max:100',
-            'latitud'           => 'nullable|numeric|between:-90,90',
-            'longitud'          => 'nullable|numeric|between:-180,180',
-            'azimut'            => 'nullable|integer|min:0|max:360',
-            'usos'              => 'nullable|string|max:200',
-            'observaciones'     => 'nullable|string|max:500',
-            'evidencias'        => 'nullable|array',
+        DB::table('arbol')
+            ->where('id_arbol', $id)
+            ->update([
+                'nombre_cientifico' => $data['nombre_cientifico'],
+                'observaciones'     => $observaciones,
+                'estado'            => 'validado',
+            ]);
+
+        $arbolActualizado = DB::table('arbol')->where('id_arbol', $id)->first();
+
+        return response()->json([
+            'ok'    => true,
+            'arbol' => $arbolActualizado,
         ]);
-        $arbol->update($data);
-        return $arbol->fresh();
-    }
-
-    public function destroy(Arbol $arbol) {
-        $arbol->delete();
-        return response()->json(['ok'=>true]);
-    }
-
-    public function validar(Request $request, Arbol $arbol) {
-        $request->user()->can('validate', $arbol); // opcional si luego agregas policies
-        $arbol->update([
-            'estado' => 'validado',
-            'validado_por' => $request->user()->id,
-        ]);
-        return $arbol->fresh();
-    }
-
-    // Estadísticas simples para Reportes → “Mostrar estadísticas”
-    public function stats() {
-        return [
-            'total'      => Arbol::count(),
-            'validado'   => Arbol::where('estado','validado')->count(),
-            'pendiente'  => Arbol::where('estado','pendiente_validacion')->count(),
-            'porCategoria' => Arbol::selectRaw('categoria, COUNT(*) as c')->groupBy('categoria')->get(),
-        ];
     }
 }

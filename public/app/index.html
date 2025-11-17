@@ -19,10 +19,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   
   <link rel="stylesheet" href="/app/styles.css">
-  <!-- Icono -->
+    <!-- Icono -->
 <link rel="icon" type="image/png" href="/app/icono.png">
 <link rel="apple-touch-icon" href="/app/icono.png">
-
 </head>
 <body id="top" class="bg-body text-body">
   <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
@@ -44,22 +43,22 @@
           <li class="nav-item"><a class="nav-link" href="#" onclick="App.go('mapa')"><i class="bi bi-geo-alt me-1"></i>Visor</a></li>
           
           <!-- Navegación por roles -->
-          <li class="nav-item d-none" data-role-visible="Administrador" id="navGestion">
+          <li class="nav-item" data-role-visible="Administrador" data-requires-login id="navGestion">
             <a class="nav-link" href="#" onclick="App.go('gestionUsuarios')"><i class="bi bi-people me-1"></i>Gestión Usuarios</a>
           </li>
-          <li class="nav-item d-none" data-role-visible="Coordinador" id="navConglomerados">
+          <li class="nav-item" data-role-visible="Coordinador" data-requires-login id="navConglomerados">
             <a class="nav-link" href="#" onclick="App.go('conglomerado')"><i class="bi bi-map me-1"></i>Conglomerados</a>
           </li>
-          <li class="nav-item d-none" data-role-visible="Coordinador" id="navSubparcelas">
+          <li class="nav-item" data-role-visible="Coordinador" data-requires-login id="navSubparcelas">
             <a class="nav-link" href="#" onclick="App.go('subparcela')"><i class="bi bi-boxes me-1"></i>Subparcelas</a>
           </li>
-          <li class="nav-item d-none" data-role-visible="Tecnico,Botanico" id="navArboles">
+          <li class="nav-item" data-role-visible="Tecnico,Botanico" data-requires-login id="navArboles">
             <a class="nav-link" href="#" onclick="App.go('arbol')"><i class="bi bi-tree me-1"></i>Registrar Árbol</a>
           </li>
-          <li class="nav-item d-none" data-role-visible="Botanico" id="navValidacion">
+          <li class="nav-item" data-role-visible="Botanico" data-requires-login id="navValidacion">
             <a class="nav-link" href="#" onclick="App.go('validacion')"><i class="bi bi-journal-check me-1"></i>Muestreo Botánico</a>
           </li>
-          <li class="nav-item d-none" data-role-visible="Coordinador" id="navReportes">
+          <li class="nav-item" data-role-visible="Coordinador" data-requires-login id="navReportes">
             <a class="nav-link" href="#" onclick="App.go('reportes')"><i class="bi bi-bar-chart me-1"></i>Reportes</a>
           </li>
         </ul>
@@ -209,13 +208,13 @@
                 <div class="step-number">2</div>
                 <div class="process-connector"></div>
                 <h5>Campo</h5>
-                <p class="small text-muted">Recolección de datos in situ por técnicos especializados</p>
+                <p class="small text-muted">Recolección de datos por técnicos especializados</p>
               </div>
               <div class="col-md-3 process-step">
                 <div class="step-number">3</div>
                 <div class="process-connector"></div>
                 <h5>Validación</h5>
-                <p class="small text-muted">Revisión taxonómica por botánicos y coordinadores</p>
+                <p class="small text-muted">Muestreo por botánicos y coordinadores</p>
               </div>
               <div class="col-md-3 process-step">
                 <div class="step-number">4</div>
@@ -500,7 +499,7 @@
           <button class="btn btn-outline-light btn-lg rounded-pill px-4" onclick="App.go('mapa')">
             <i class="bi bi-map me-2"></i>Explorar Visor
           </button>
-          <button class="btn btn-outline-light btn-lg rounded-pill px-4">
+          <button class="btn btn-outline-light btn-lg rounded-pill px-4" onclick="App.descargarManual()">
             <i class="bi bi-download me-2"></i>Descargar Manual
           </button>
         </div>
@@ -510,20 +509,20 @@
 
   <!-- Login -->
   <section id="view-login" class="view d-none">
-    <div class="container-xl py-4">
+    <div class="container-xl py-4 login-container">
       <div class="row justify-content-center">
         <div class="col-12 col-md-6 col-lg-5">
-          <div class="card shadow-sm border-0">
+          <div class="card shadow-sm border-0 login-card">
             <div class="card-body p-4">
-              <h1 class="h4 fw-bold text-center mb-3">Sistema de Inventario Forestal</h1>
+              <h1 class="h4 fw-bold text-center mb-3">Sistema del Inventario Forestal Nacional</h1>
               <p class="text-center mb-4">Ingrese sus credenciales para acceder</p>
               
-              <div id="loginMessage" class="alert alert-danger d-none"></div>
+              <div id="loginMessage" class="alert alert-danger d-none login-message"></div>
               
               <form id="formLogin" onsubmit="App.handleLogin(event)" class="needs-validation" novalidate>
                 <div class="mb-3">
                   <label for="loginEmail" class="form-label">Correo electrónico</label>
-                  <div class="input-group">
+                  <div class="input-group login-input-group">
                     <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                     <input type="email" class="form-control" id="loginEmail" placeholder="usuario@ifn.gov.co" required>
                   </div>
@@ -531,10 +530,10 @@
                 
                 <div class="mb-3">
                   <label for="loginPassword" class="form-label">Contraseña</label>
-                  <div class="input-group">
+                  <div class="input-group login-input-group">
                     <span class="input-group-text"><i class="bi bi-lock"></i></span>
                     <input type="password" class="form-control" id="loginPassword" placeholder="Ingrese su contraseña" required>
-                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
+                    <button class="btn btn-toggle-password" type="button" id="togglePassword">
                       <i class="bi bi-eye"></i>
                     </button>
                   </div>
@@ -548,21 +547,7 @@
               </form>
               
               <div class="text-center">
-                <small class="text-muted">¿No tienes credenciales? Usa las cuentas de prueba:</small>
-                <div class="mt-2">
-                  <button class="btn btn-sm btn-outline-primary me-1 mb-1" onclick="App.fillCredentials('admin@ifn.gov.co', 'Admin123*')">
-                    Admin
-                  </button>
-                  <button class="btn btn-sm btn-outline-success me-1 mb-1" onclick="App.fillCredentials('coordinador@ifn.gov.co', 'Coord123*')">
-                    Coordinador
-                  </button>
-                  <button class="btn btn-sm btn-outline-warning me-1 mb-1" onclick="App.fillCredentials('tecnico@ifn.gov.co', 'Tecnico123*')">
-                    Técnico
-                  </button>
-                  <button class="btn btn-sm btn-outline-info mb-1" onclick="App.fillCredentials('botanico@ifn.gov.co', 'Botanico123*')">
-                    Botánico
-                  </button>
-                </div>
+                <small class="text-muted">Para acceder al sistema, contacte al administrador.</small>
               </div>
             </div>
           </div>
@@ -572,7 +557,7 @@
   </section>
 
   <!-- Dashboard -->
-  <section id="view-dashboard" class="view d-none">
+  <section id="view-dashboard" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
         <strong>IFN • Inventario Forestal</strong>
@@ -597,7 +582,7 @@
       <!-- Dashboard Administrador -->
       <div id="cardsAdministrador" class="row g-3 d-none">
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Gestión de Usuarios</h3>
               <p class="small">Crear, modificar y desactivar usuarios del sistema</p>
@@ -610,25 +595,25 @@
       <!-- Dashboard Coordinador -->
       <div id="cardsCoordinador" class="row g-3 d-none">
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Asignar Conglomerado</h3>
-              <p class="small">Registro inicial de conglomerados</p>
+              <p class="small">Asignación de Conglomerados a Técnicos y Botanicos.</p>
               <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('conglomerado')">Abrir</button>
             </div>
           </div>
         </div>
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Asignar Subparcela</h3>
-              <p class="small">Registro de subparcelas en conglomerados</p>
+              <p class="small">Asignación de Subparcelas a Técnicos y Botanicos.</p>
               <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('subparcela')">Abrir</button>
             </div>
           </div>
         </div>
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Generar Reportes</h3>
               <p class="small">Consolidar y exportar información</p>
@@ -641,10 +626,10 @@
       <!-- Dashboard Técnico -->
       <div id="cardsTecnico" class="row g-3 d-none">
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Registrar Árbol</h3>
-              <p class="small">Registro de árboles (pendiente validación)</p>
+              <p class="small">Registro de árboles (Pendiente validación Botanico.) </p>
               <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
             </div>
           </div>
@@ -654,19 +639,19 @@
       <!-- Dashboard Botánico -->
       <div id="cardsBotanico" class="row g-3 d-none">
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Registrar Árbol</h3>
-              <p class="small">Registro de árboles (validado inmediatamente)</p>
+              <p class="small">Registro de árboles</p>
               <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('arbol')">Abrir</button>
             </div>
           </div>
         </div>
         <div class="col-12 col-md-6 col-lg-4">
-          <div class="card h-100 shadow-sm border-0">
+          <div class="card h-100 shadow-sm border-0 dashboard-card">
             <div class="card-body text-center">
               <h3 class="h6 fw-bold">Muestreo Botánico</h3>
-              <p class="small">Validar identidad científica de árboles</p>
+              <p class="small">Validación científica de árboles</p>
               <button class="btn btn-outline-cta btn-sm rounded-pill mt-2" onclick="App.go('validacion')">Abrir</button>
             </div>
           </div>
@@ -675,14 +660,62 @@
     </div>
   </section>
 
+    <!-- === MUESTREO BOTÁNICO / VALIDACIÓN === -->
+  <section id="view-validacion" class="view d-none" data-requires-login>
+    <div class="container-xl py-3">
+      <h3 class="mb-3">Muestreo Botánico – Validación taxonómica</h3>
+
+      <!-- Mensaje de permiso (si entra alguien que NO es Botánico) -->
+      <div id="permisoValidacion" class="alert alert-warning d-none">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Acceso restringido:</strong> Solo el Botánico puede acceder a este módulo.
+      </div>
+
+      <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span>
+            <i class="bi bi-hourglass-split me-2"></i>
+            Pendientes de validación
+          </span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover mb-0" id="tablaPendientes">
+              <thead class="table-light">
+                <tr>
+                  <th>ID</th>
+                  <th>Conglomerado</th>
+                  <th>Subparcela</th>
+                  <th>Nombre científico</th>
+                  <th>Estado</th>
+                  <th>Fecha</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="7" class="text-center text-muted py-3">
+                    No hay registros pendientes de validación.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
   <!-- Gestión de Usuarios (Solo Administrador) - CORREGIDO -->
-  <section id="view-gestionUsuarios" class="view d-none">
+  <section id="view-gestionUsuarios" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <h2 class="h4 mb-3">Gestión de Usuarios</h2>
       <p class="text-muted mb-3">Administrar usuarios del sistema y asignar roles.</p>
       
       <!-- Validación de permisos - SOLO se muestra si NO es administrador -->
-      <div id="permisoGestionUsuarios" class="alert alert-warning d-none">
+      <div id="permisoGestionUsuarios" class="alert alert-warning permiso-alert d-none">
         <i class="bi bi-exclamation-triangle me-2"></i>
         <strong>Acceso restringido:</strong> Solo el Administrador puede gestionar usuarios.
       </div>
@@ -702,11 +735,11 @@
             </div>
             
             <div class="table-responsive">
-              <table class="table table-hover">
+              <table class="table table-hover table-usuarios">
                 <thead class="table-light">
                   <tr>
                     <th>ID</th>
-                    <th>Nombre</th>
+                    <th>Nombre Completo</th>
                     <th>Email</th>
                     <th>Rol</th>
                     <th>Estado</th>
@@ -732,7 +765,7 @@
   </section>
 
   <!-- MAPA -->
-  <section id="view-mapa" class="view d-none">
+  <section id="view-mapa" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <h2 class="h4 mb-3">Visor geográfico</h2>
       <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
@@ -764,30 +797,84 @@
   </section>
 
   <!-- Formularios -->
-  <section id="view-conglomerado" class="view d-none">
+  <section id="view-conglomerado" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 mb-0">Registrar Conglomerado</h2>
+        <h2 class="h4 mb-0">Asignar Conglomerado</h2>
         <span id="autosaveStatusCong" class="autosave-status d-none"></span>
       </div>
       
       <!-- Validación de permisos -->
-      <div id="permisoConglomerado" class="alert alert-warning d-none">
+      <div id="permisoConglomerado" class="alert alert-warning permiso-alert d-none">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>Acceso restringido:</strong> Solo el Coordinador puede registrar conglomerados.
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede asignar conglomerados.
       </div>
       
       <div id="msgCong" class="my-2"></div>
       <form id="formConglomerado" onsubmit="App.saveConglomerado(event)" class="row g-3 needs-validation" novalidate>
-        <div class="col-12 col-md-4"><label class="form-label">Código <span class="text-danger">*</span></label><input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required></div>
-        <div class="col-12 col-md-4"><label class="form-label">Región <span class="text-danger">*</span></label><input name="region" class="form-control" required></div>
-        <div class="col-12 col-md-4"><label class="form-label">Municipio <span class="text-danger">*</span></label><input name="municipio" class="form-control" required></div>
-        <div class="col-12 col-md-4"><label class="form-label">Vereda <span class="text-danger">*</span></label><input name="vereda" class="form-control" required></div>
-        <div class="col-12 col-md-4"><label class="form-label">Fecha <span class="text-danger">*</span></label><input type="date" name="fecha" class="form-control" max="<?= date('Y-m-d') ?>" required></div>
-        <div class="col-12 col-md-4"><label class="form-label">Brigada <span class="text-danger">*</span></label><input name="brigada" class="form-control" required></div>
-        <div class="col-6"><label class="form-label">Latitud <span class="text-danger">*</span></label><input name="latitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -12.345678" required></div>
-        <div class="col-6"><label class="form-label">Longitud <span class="text-danger">*</span></label><input name="longitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -76.543210" required></div>
-        <div class="col-12"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea></div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Código <span class="text-danger">*</span></label>
+          <input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Región <span class="text-danger">*</span></label>
+          <input name="region" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Estado <span class="text-danger">*</span></label>
+          <select name="estado" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            <option value="iniciando">Iniciando</option>
+            <option value="Finalizado">Finalizado</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Latitud <span class="text-danger">*</span></label>
+          <input name="latitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -12.345678" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Longitud <span class="text-danger">*</span></label>
+          <input name="longitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -76.543210" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Altitud (m)</label>
+          <input name="altitud" class="form-control" type="number" step="0.1" min="0" max="6000">
+        </div>
+        <div class="col-6">
+          <label class="form-label">Fecha Inicio <span class="text-danger">*</span></label>
+          <input type="date" name="fechaInicio" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Fecha Final <span class="text-danger">*</span></label>
+          <input type="date" name="fechaFinal" class="form-control" required>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Brigada <span class="text-danger">*</span></label>
+          <select name="brigada" class="form-select" required>
+            <option value="">Seleccionar brigada...</option>
+            <option value="Brigada Amazonas">Brigada Amazonas</option>
+            <option value="Brigada Santander">Brigada Santander</option>
+            <option value="Brigada Pacífico">Brigada Pacífico</option>
+            <option value="Brigada Caribe">Brigada Caribe</option>
+            <option value="Brigada Orinoquía">Brigada Orinoquía</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Técnico Asignado</label>
+          <select name="tecnicoAsignado" id="tecnicoAsignado" class="form-select">
+            <option value="">Seleccionar técnico...</option>
+          </select>
+        </div>
+        <div class="col-6">
+          <label class="form-label">Botánico Asignado</label>
+          <select name="botanicoAsignado" id="botanicoAsignado" class="form-select">
+            <option value="">Seleccionar botánico...</option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
         
         <!-- Adjuntos -->
         <div class="col-12">
@@ -813,33 +900,68 @@
     </div>
   </section>
 
-  <section id="view-subparcela" class="view d-none">
+  <section id="view-subparcela" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="h4 mb-0">Registrar Subparcela</h2>
+        <h2 class="h4 mb-0">Asignar Subparcelas</h2>
         <span id="autosaveStatusSub" class="autosave-status autosave-saved d-none">Auto-guardado</span>
       </div>
       
       <!-- Validación de permisos -->
-      <div id="permisoSubparcela" class="alert alert-warning d-none">
+      <div id="permisoSubparcela" class="alert alert-warning permiso-alert d-none">
         <i class="bi bi-exclamation-triangle me-2"></i>
-        <strong>Acceso restringido:</strong> Solo el Coordinador puede registrar subparcelas.
+        <strong>Acceso restringido:</strong> Solo el Coordinador puede asignar Subparcelas.
       </div>
       
       <div id="msgSub" class="my-2"></div>
       <form id="formSubparcela" onsubmit="App.saveSubparcela(event)" class="row g-3 needs-validation" novalidate>
-        <div class="col-12 col-md-4"><label class="form-label">Código <span class="text-danger">*</span></label><input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required></div>
-        <div class="col-12 col-md-4"><label class="form-label">Estado <span class="text-danger">*</span></label>
-          <select name="estado" class="form-select" required>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Código <span class="text-danger">*</span></label>
+          <input name="codigo" class="form-control" pattern="[A-Za-z0-9\-]+" required>
+        </div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Número Subparcela <span class="text-danger">*</span></label>
+          <select name="numeroSubparcela" class="form-select" required>
             <option value="">Seleccionar...</option>
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-            <option value="pendiente">Pendiente</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
           </select>
         </div>
-        <div class="col-12 col-md-4"><label class="form-label">Coberturas <span class="text-danger">*</span></label><input name="coberturas" class="form-control" required></div>
-        <div class="col-6"><label class="form-label">Latitud <span class="text-danger">*</span></label><input name="latitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -12.345678" required></div>
-        <div class="col-6"><label class="form-label">Longitud <span class="text-danger">*</span></label><input name="longitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -76.543210" required></div>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Fecha Levantamiento <span class="text-danger">*</span></label>
+          <input type="date" name="fechaLevantamiento" class="form-control" required>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Cobertura <span class="text-danger">*</span></label>
+          <select name="cobertura" class="form-select" required>
+            <option value="">Seleccionar...</option>
+            <option value="AFLORAMIENTO ROCOSO">AFLORAMIENTO ROCOSO</option>
+            <option value="BOSQUE DE TIERRA FIRME">BOSQUE DE TIERRA FIRME</option>
+            <option value="CULTIVOS">CULTIVOS</option>
+            <option value="ARBUSTAL">ARBUSTAL</option>
+            <option value="BOSQUE INUNDABLE">BOSQUE INUNDABLE</option>
+            <option value="HERBAZAL">HERBAZAL</option>
+          </select>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Alteraciones</label>
+          <select name="alteraciones" class="form-select" multiple>
+            <option value="Matorral">Matorral</option>
+            <option value="Pastizal">Pastizal</option>
+            <option value="Suelo Desnudo">Suelo Desnudo</option>
+            <option value="Pantano">Pantano</option>
+            <option value="Rastrojo">Rastrojo</option>
+            <option value="Zona Urbana">Zona Urbana</option>
+          </select>
+          <small class="text-muted">Mantén Ctrl para seleccionar múltiples opciones</small>
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
         <div class="col-12 col-md-6">
           <label class="form-label">Conglomerado <span class="text-danger">*</span></label>
           <select name="conglomerado" id="spCong" class="form-select" required></select>
@@ -855,7 +977,7 @@
     </div>
   </section>
 
-  <section id="view-arbol" class="view d-none">
+  <section id="view-arbol" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="h4 mb-0">Registrar Árbol</h2>
@@ -863,7 +985,7 @@
       </div>
       
       <!-- Información de estado según rol -->
-      <div id="infoEstadoArbol" class="alert alert-info d-none">
+      <div id="infoEstadoArbol" class="alert alert-info info-estado-arbol d-none">
         <i class="bi bi-info-circle me-2"></i>
         <span id="textoEstadoArbol">El árbol se registrará como pendiente de validación.</span>
       </div>
@@ -880,13 +1002,15 @@
         </div>
         <div class="col-12 col-md-6">
           <label class="form-label">Nombre científico <span class="text-danger">*</span></label>
-          <input name="nombreCientifico" class="form-control nombre-cientifico" placeholder="Género especie" 
-                 pattern="[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){1,2}" 
-                 title="Formato: Género especie (ej: Quercus humboldtii)" required>
+          <input name="nombreCientifico" class="form-control nombre-cientifico" placeholder="Género especie" required>
           <small class="text-muted">Formato: Género especie (en cursiva)</small>
         </div>
-        <div class="col-12 col-md-6"><label class="form-label">Nombres comunes</label><input name="nombresComunes" class="form-control" placeholder="Roble, nogal, etc."></div>
-        <div class="col-12 col-md-6"><label class="form-label">Categoría <span class="text-danger">*</span></label>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Nombres comunes</label>
+          <input name="nombresComunes" class="form-control" placeholder="Roble, nogal, etc.">
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Categoría <span class="text-danger">*</span></label>
           <select name="categoria" class="form-select" required>
             <option value="">Seleccionar...</option>
             <option value="Latifoliado">Latifoliado</option>
@@ -895,17 +1019,30 @@
             <option value="Otro">Otro</option>
           </select>
         </div>
-        <div class="col-12 col-md-6"><label class="form-label">DAP (cm) <span class="text-danger">*</span></label><input name="dap" class="form-control" type="number" step="0.1" min="0" max="500" required></div>
-        <div class="col-12 col-md-6"><label class="form-label">Altura (m) <span class="text-danger">*</span></label><input name="altura" class="form-control" type="number" step="0.1" min="0" max="100" required></div>
-        <div class="col-6"><label class="form-label">Latitud</label><input name="latitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -12.345678"></div>
-        <div class="col-6"><label class="form-label">Longitud</label><input name="longitud" class="form-control" pattern="-?\d{1,3}\.\d+" title="Formato: -76.543210"></div>
-        <div class="col-6"><label class="form-label">Azimut</label><input name="azimut" class="form-control" type="number" min="0" max="360" placeholder="0-360°"></div>
-        <div class="col-12"><label class="form-label">Usos</label><input name="usos" class="form-control" placeholder="maderable, medicinal, sombra…" maxlength="200"></div>
-        <div class="col-12"><label class="form-label">Observaciones</label><textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea></div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">DAP (cm) <span class="text-danger">*</span></label>
+          <input name="dap" class="form-control" type="number" step="0.1" min="0" max="500" required>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Altura Total (m) <span class="text-danger">*</span></label>
+          <input name="alturaTotal" class="form-control" type="number" step="0.1" min="0" max="100" required>
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label">Altura Fuste (m)</label>
+          <input name="alturaFuste" class="form-control" type="number" step="0.1" min="0" max="100">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Usos</label>
+          <input name="usos" class="form-control" placeholder="maderable, medicinal, sombra…" maxlength="200">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Observaciones</label>
+          <textarea name="observaciones" class="form-control" rows="2" maxlength="500"></textarea>
+        </div>
         
         <!-- Adjuntos para árbol -->
         <div class="col-12">
-          <label class="form-label">Evidencias (fotos, muestras)</label>
+          <label class="form-label">Evidencias (fotos, muestras) - Opcional</label>
           <div class="file-input-container">
             <button type="button" class="btn btn-outline-secondary w-100">
               <i class="bi bi-camera me-2"></i>Agregar evidencias
@@ -927,19 +1064,19 @@
     </div>
   </section>
 
-  <section id="view-validacion" class="view d-none">
+  <section id="view-validacion" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
-      <h2 class="h4 mb-3">Validación Taxonómica</h2>
+      <h2 class="h4 mb-3">Muestreo Botánico</h2>
       <p class="text-muted mb-3">Revisar y confirmar la identidad científica de los árboles registrados.</p>
       
       <!-- Validación de permisos -->
-      <div id="permisoValidacion" class="alert alert-warning d-none">
+      <div id="permisoValidacion" class="alert alert-warning permiso-alert d-none">
         <i class="bi bi-exclamation-triangle me-2"></i>
         <strong>Acceso restringido:</strong> Solo el Botánico puede realizar validación taxonómica.
       </div>
       
       <div class="table-responsive shadow-sm rounded-4 border bg-body">
-        <table class="table table-hover mb-0" id="tablaPendientes">
+        <table class="table table-hover mb-0 table-validacion" id="tablaPendientes">
           <thead class="table-light">
             <tr>
               <th>ID</th>
@@ -960,13 +1097,13 @@
     </div>
   </section>
 
-  <section id="view-reportes" class="view d-none">
+  <section id="view-reportes" class="view d-none" data-requires-login>
     <div class="container-xl py-3">
       <h2 class="h4 mb-3">Generar Reportes</h2>
       <p class="text-muted">Consolidar información de conglomerados, subparcelas, árboles y validaciones taxonómicas.</p>
       
       <!-- Validación de permisos -->
-      <div id="permisoReportes" class="alert alert-warning d-none">
+      <div id="permisoReportes" class="alert alert-warning permiso-alert d-none">
         <i class="bi bi-exclamation-triangle me-2"></i>
         <strong>Acceso restringido:</strong> Solo el Coordinador puede generar reportes.
       </div>
@@ -1091,11 +1228,11 @@
         <div class="col-6 col-md-2">
           <h6 class="footer-title">Recursos</h6>
           <ul class="list-unstyled small">
-            <li><a href="#">Manual de usuario</a></li>
-            <li><a href="#">Guía taxonómica</a></li>
-            <li><a href="#">Protocolos de campo</a></li>
-            <li><a href="#">Publicaciones</a></li>
-            <li><a href="#">Datos abiertos</a></li>
+            <li><a href="#" onclick="App.descargarManual()">Manual de usuario</a></li>
+            <li><a href="#" onclick="App.descargarGuiaTaxonomica()">Guía taxonómica</a></li>
+            <li><a href="#" onclick="App.descargarProtocolos()">Protocolos de campo</a></li>
+            <li><a href="#" onclick="App.descargarPublicaciones()">Publicaciones</a></li>
+            <li><a href="#" onclick="App.descargarDatosAbiertos()">Datos abiertos</a></li>
           </ul>
         </div>
         <div class="col-12 col-md-4">
@@ -1106,7 +1243,7 @@
             <span class="ms-4">Bogotá D.C., Colombia</span>
           </p>
           <div class="mt-3">
-            <button class="btn btn-outline-primary btn-sm rounded-pill">
+            <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="App.mostrarSoporte()">
               <i class="bi bi-chat-dots me-1"></i> Soporte Técnico
             </button>
           </div>

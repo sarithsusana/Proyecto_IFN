@@ -554,7 +554,6 @@ const Database = {
 
   // Método para inicializar datos en el State
   initializeData() {
-    // Cargar datos en el State si no existen
     if (State.data.conglomerados.length === 0) {
       State.data.conglomerados = this.conglomerados;
     }
@@ -567,7 +566,6 @@ const Database = {
       State.data.arboles = this.arboles;
     }
     
-    // Guardar en localStorage
     saveToStorage();
   },
 
@@ -620,7 +618,6 @@ const Database = {
       this.arboles.push(arbol);
     }
 
-    // Actualizar State y localStorage
     State.data.arboles = this.arboles;
     saveToStorage();
     
@@ -629,7 +626,7 @@ const Database = {
 
   // Método para limpiar datos de prueba
   clearSampleData() {
-    this.arboles = this.arboles.slice(0, 12); // Mantener solo los registros originales
+    this.arboles = this.arboles.slice(0, 12);
     State.data.arboles = this.arboles;
     saveToStorage();
   },
@@ -668,24 +665,20 @@ function loadFromStorage() {
       State.data.subparcelas = parsed.subparcelas || [];
       State.data.arboles = parsed.arboles || [];
     } else {
-      // Si no hay datos guardados, inicializar con datos de prueba
       Database.initializeData();
     }
     
-    // Cargar borradores
     const borradores = localStorage.getItem('ifn_borradores');
     if (borradores) {
       State.borradores = {...State.borradores, ...JSON.parse(borradores)};
     }
 
-    // Cargar usuario de sesión si existe
     const userSession = localStorage.getItem('ifn_user_session');
     if (userSession) {
       State.user = JSON.parse(userSession);
     }
   } catch (e) {
     console.warn('Error cargando datos del localStorage:', e);
-    // En caso de error, inicializar con datos de prueba
     Database.initializeData();
   }
 }
@@ -726,25 +719,20 @@ function setupAutosave(formId, borradorKey) {
   const form = document.getElementById(formId);
   if (!form) return;
 
-  // Cargar borrador existente
   if (State.borradores[borradorKey]) {
     loadFormData(form, State.borradores[borradorKey]);
     showToast('Borrador cargado automáticamente', 'info', 2000);
   }
 
-  // Configurar auto-guardado en cada cambio
   const inputs = form.querySelectorAll('input, select, textarea');
   inputs.forEach(input => {
     input.addEventListener('input', () => {
-      // Cancelar timeout anterior
       if (State.autosaveTimeouts[borradorKey]) {
         clearTimeout(State.autosaveTimeouts[borradorKey]);
       }
 
-      // Mostrar estado "guardando..."
       updateAutosaveStatus(borradorKey, 'saving');
 
-      // Nuevo timeout para guardar después de 1 segundo de inactividad
       State.autosaveTimeouts[borradorKey] = setTimeout(() => {
         const formData = getFormData(form);
         State.borradores[borradorKey] = {
@@ -775,13 +763,16 @@ function loadFormData(form, borrador) {
   
   Object.keys(borrador.data).forEach(key => {
     const element = form.elements[key];
-    if (element) {
-      element.value = borrador.data[key];
-      
-      // Disparar evento change para selectores dependientes
-      if (element.tagName === 'SELECT') {
-        element.dispatchEvent(new Event('change'));
-      }
+    if (!element) return;
+
+    if (element.type === 'file') {
+      return;
+    }
+
+    element.value = borrador.data[key];
+
+    if (element.tagName === 'SELECT') {
+      element.dispatchEvent(new Event('change'));
     }
   });
 }
@@ -839,18 +830,38 @@ function isValidCoordinate(lat, lng) {
 
 // Validación de fecha
 function isValidDate(dateString) {
-  const date = new Date(dateString);
-  return date instanceof Date && !isNaN(date) && date <= new Date();
+  if (!dateString) return false;
+
+  const parts = dateString.split('/');
+  if (parts.length === 3) {
+    const day = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const year = parseInt(parts[2], 10);
+
+    const date = new Date(year, month, day);
+    if (isNaN(date)) return false;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return date <= today;
+  }
+
+  const d2 = new Date(dateString);
+  if (isNaN(d2)) return false;
+
+  return d2 <= new Date();
 }
 
 // Validación de nombre científico (formato Género especie) - ahora opcional
 function isValidScientificName(name) {
   if (!name || name.trim() === '') return false;
   const sciName = name.trim();
-  // Formato básico: Género especie (opcional subespecie/variedad)
-  // Ahora es más permisivo para permitir validación manual
   return /^[A-ZÁÉÍÓÚÑ][a-záéíóúñ]+(\s+[a-záéíóúñ\-]+){0,2}$/.test(sciName);
 }
+// Base de la API Laravel
+const API_BASE = 'http://127.0.0.1:8000/api';
+
 
 // APP mejorada con sistema de borradores y autenticación
 const App = {
@@ -863,7 +874,6 @@ const App = {
   },
 
   setupEventListeners() {
-    // Mejorar validación de formularios
     qsa('form').forEach(form => {
       form.addEventListener('submit', (e) => {
         if (!form.checkValidity()) {
@@ -876,7 +886,6 @@ const App = {
   },
 
   setupLoginListeners() {
-    // Configurar toggle de visibilidad de contraseña
     const togglePassword = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('loginPassword');
     
@@ -890,7 +899,6 @@ const App = {
   },
 
   setupFileInputs() {
-    // Configurar inputs de archivo para mostrar lista
     qsa('input[type="file"]').forEach(input => {
       input.addEventListener('change', function(e) {
         const fileList = document.getElementById('fileList' + this.name.charAt(0).toUpperCase() + this.name.slice(1));
@@ -919,43 +927,70 @@ const App = {
     const files = Array.from(fileInput.files);
     files.splice(index, 1);
     
-    // Crear nuevo DataTransfer y reemplazar files
     const dt = new DataTransfer();
     files.forEach(file => dt.items.add(file));
     fileInput.files = dt.files;
     
-    // Disparar evento change para actualizar lista
     fileInput.dispatchEvent(new Event('change'));
   },
 
-  // Nuevo método para manejar login con credenciales
+  // Nuevo método para manejar login REAL con backend
+  // Nuevo método para manejar login REAL con backend
   handleLogin(ev) {
     ev.preventDefault();
     
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
-    const messageEl = document.getElementById('loginMessage');
     
-    // Validaciones básicas
     if (!email || !password) {
       this.showLoginError('Por favor ingrese email y contraseña');
       return;
     }
     
-    // Validar formato de email
     if (!this.isValidEmail(email)) {
       this.showLoginError('Por favor ingrese un email válido');
       return;
     }
-    
-    // Autenticar usuario
-    const usuario = UsersDB.validarCredenciales(email, password);
-    
-    if (usuario) {
-      this.loginSuccess(usuario);
-    } else {
-      this.showLoginError('Credenciales incorrectas. Verifique su email y contraseña.');
-    }
+
+    fetch('http://127.0.0.1:8000/api/login', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ email, password })
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        console.log('[IFN] Respuesta login backend:', data);
+
+        // Si algo falla (401 o 500, etc.)
+        if (!res.ok || data.ok === false) {
+          if (res.status === 401) {
+            // <<< AQUÍ el mensaje bonito que quieres
+            this.showLoginError('Usuario y/o contraseña incorrectos.');
+          } else {
+            // Error de servidor genérico
+            this.showLoginError('Ocurrió un error en el servidor. Intente de nuevo más tarde.');
+            console.error('[IFN] Detalle error login:', data);
+          }
+          return;
+        }
+
+        // Si todo está bien
+        const usuario = {
+          email: data.user.email,
+          role: data.user.role,
+          nombre: data.user.nombre,
+          token: null // después lo usamos si metemos tokens
+        };
+
+        this.loginSuccess(usuario);
+      })
+      .catch((err) => {
+        console.error('[IFN] Error de red en login:', err);
+        this.showLoginError('No se pudo conectar con el servidor.');
+      });
   },
 
   // Método para llenar credenciales automáticamente
@@ -979,7 +1014,6 @@ const App = {
     messageEl.textContent = message;
     messageEl.classList.remove('d-none');
     
-    // Agregar animación de shake
     messageEl.classList.add('shake');
     setTimeout(() => {
       messageEl.classList.remove('shake');
@@ -996,7 +1030,6 @@ const App = {
     
     this.go('dashboard');
     
-    // Actualizar navegación y botones de auth
     this.actualizarNavegacion();
     this.actualizarBotonesAuth();
   },
@@ -1026,12 +1059,10 @@ const App = {
       }
     }
 
-    // Actualizar navegación según rol
     this.actualizarNavegacion();
 
     switch(view){
       case 'login':
-        // Limpiar formulario de login al entrar
         const loginForm = document.getElementById('formLogin');
         if (loginForm) {
           loginForm.reset();
@@ -1043,53 +1074,54 @@ const App = {
       case 'dashboard':
         qs('#userRole').textContent = State.user?.role || '';
         qs('#userEmail').textContent = State.user?.email || '';
-        // Mostrar/ocultar secciones según rol
         qs('#cardsAdministrador').classList.toggle('d-none', State.user?.role!=='Administrador');
         qs('#cardsCoordinador').classList.toggle('d-none', State.user?.role!=='Coordinador');
         qs('#cardsTecnico').classList.toggle('d-none', State.user?.role!=='Tecnico');
         qs('#cardsBotanico').classList.toggle('d-none', State.user?.role!=='Botanico');
         
-        // Actualizar botones de login/logout
         this.actualizarBotonesAuth();
         this.actualizarBorradoresUI();
         break;
         
       case 'gestionUsuarios':
-        // Validar permisos y cargar gestión de usuarios
         this.cargarGestionUsuarios();
         break;
         
       case 'conglomerado': 
         State.activeForm='conglomerado';
-        // Validar permisos para conglomerados
         this.validarPermiso('Coordinador', 'conglomerado');
         setTimeout(() => setupAutosave('formConglomerado', 'conglomerado'), 100);
         break;
         
       case 'subparcela': 
         State.activeForm='subparcela'; 
-        // Validar permisos para subparcelas
         this.validarPermiso('Coordinador', 'subparcela');
         fillSelect('#spCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo} — ${c.municipio}</option>`); 
         setTimeout(() => setupAutosave('formSubparcela', 'subparcela'), 100);
         break;
         
       case 'arbol':
-        // Mostrar información de estado según rol
         this.mostrarInfoEstadoArbol();
+
         fillSelect('#arCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo}</option>`);
+
+        const congSelect = qs('#arCong');
+        if (congSelect && !congSelect.dataset.subpListener) {
+          congSelect.addEventListener('change', () => this.updateSubparcelas());
+          congSelect.dataset.subpListener = '1';
+        }
+
         this.updateSubparcelas();
+
         setTimeout(() => setupAutosave('formArbol', 'arbol'), 100);
         break;
-        
+
       case 'validacion': 
-        // Validar permisos para validación
         this.validarPermiso('Botanico', 'validacion');
-        this.renderPendientes(); 
+        this.cargarPendientesValidacion();
         break;
         
       case 'reportes': 
-        // Validar permisos para reportes
         this.validarPermiso('Coordinador', 'reportes');
         this.renderReportes(); 
         break;
@@ -1100,116 +1132,381 @@ const App = {
     }
   },
 
+
+// NUEVO: cargar árboles pendientes desde backend
+cargarPendientesValidacion: async function () {
+  const tbody = qs('#tablaPendientes tbody');
+  if (!tbody) return;
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="7" class="text-center py-3">
+        Cargando árboles...
+      </td>
+    </tr>
+  `;
+
+  try {
+    const res = await fetch('http://127.0.0.1:8000/api/arboles-pendientes', {
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+
+    const data = await res.json();
+    const rows = Array.isArray(data) ? data : (Array.isArray(data.data) ? data.data : []);
+
+    if (!rows.length) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center py-3">
+            No hay árboles registrados aún.
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    // Pintar filas
+    tbody.innerHTML = rows.map(row => `
+      <tr>
+        <td>${row.id_arbol}</td>
+        <td>${row.codigo_conglomerado || '-'}</td>
+        <td>${row.codigo_subparcela || '-'}</td>
+        <td>${row.nombre_cientifico ?? ''}</td>
+        <td>Pendiente</td>
+        <td>${row.fecha_registro ?? ''}</td>
+        <td>
+          <button
+            class="btn btn-sm btn-outline-primary btn-ver-validar"
+            data-id="${row.id_arbol}"
+            data-cong="${row.codigo_conglomerado || ''}"
+            data-sub="${row.codigo_subparcela || ''}"
+            data-nombre="${row.nombre_cientifico || ''}"
+          >
+            Ver / Validar
+          </button>
+        </td>
+      </tr>
+    `).join('');
+
+    // Asignar eventos a los botones
+    tbody.querySelectorAll('.btn-ver-validar').forEach(btn => {
+      btn.addEventListener('click', () => {
+        // Solo el botánico puede validar
+        if (State.user?.role !== 'Botanico') {
+          showToast('Solo el Botánico puede realizar validación taxonómica', 'warning');
+          return;
+        }
+
+        const arbol = {
+          id: parseInt(btn.dataset.id, 10),
+          conglomerado: btn.dataset.cong || '-',
+          subparcela: btn.dataset.sub || '-',
+          nombreCientifico: btn.dataset.nombre || ''
+        };
+
+        App.mostrarModalValidacion(arbol);
+      });
+    });
+
+  } catch (err) {
+    console.error('[IFN] Error cargando árboles pendientes', err);
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="7" class="text-center py-3 text-danger">
+          Error al cargar datos desde el servidor.
+        </td>
+      </tr>
+    `;
+  }
+},
+
+
   // NUEVO MÉTODO: Cargar gestión de usuarios
   cargarGestionUsuarios() {
     const permisoElement = qs('#permisoGestionUsuarios');
     const contenidoElement = qs('#contenidoGestionUsuarios');
     
     if (State.user?.role === 'Administrador') {
-      // Usuario es administrador - mostrar contenido real
       if (permisoElement) permisoElement.classList.add('d-none');
       if (contenidoElement) contenidoElement.classList.remove('d-none');
-      
-      // Cargar datos de usuarios
       this.cargarTablaUsuarios();
     } else {
-      // Usuario NO es administrador - mostrar mensaje de permiso
       if (permisoElement) permisoElement.classList.remove('d-none');
       if (contenidoElement) contenidoElement.classList.add('d-none');
       showToast('Acceso restringido: Solo el Administrador puede gestionar usuarios', 'warning');
     }
   },
 
-  // NUEVO MÉTODO: Cargar tabla de usuarios
-  cargarTablaUsuarios() {
-    const tablaUsuarios = qs('#tablaUsuarios');
-    const totalUsuarios = qs('#totalUsuarios');
-    
-    if (!tablaUsuarios || !totalUsuarios) return;
-    
-    const usuarios = UsersDB.obtenerTodosUsuarios();
-    totalUsuarios.textContent = `Total: ${usuarios.length} usuarios`;
-    
-    tablaUsuarios.innerHTML = usuarios.map(usuario => `
-      <tr>
-        <td>${usuario.id}</td>
-        <td>${usuario.nombre}</td>
-        <td>${usuario.email}</td>
-        <td><span class="badge ${this.getBadgeClassForRole(usuario.role)}">${usuario.role}</span></td>
-        <td>
-          <span class="badge ${usuario.activo ? 'bg-success' : 'bg-secondary'}">
-            ${usuario.activo ? 'Activo' : 'Inactivo'}
-          </span>
-        </td>
-        <td>${new Date(usuario.fechaCreacion).toLocaleDateString()}</td>
-        <td>
-          <button class="btn btn-sm btn-outline-primary" onclick="App.editarUsuario(${usuario.id})" title="Editar">
-            <i class="bi bi-pencil"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-${usuario.activo ? 'warning' : 'success'} ms-1" 
-                  onclick="App.${usuario.activo ? 'desactivar' : 'activar'}Usuario(${usuario.id})" 
-                  title="${usuario.activo ? 'Desactivar' : 'Activar'}">
-            <i class="bi bi-${usuario.activo ? 'person-x' : 'person-check'}"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
-  },
+// ===============================
+// Cargar tabla de usuarios (GET /personas)
+// ===============================
+cargarTablaUsuarios() {
+  const tablaUsuarios = qs('#tablaUsuarios');
+  const totalUsuarios = qs('#totalUsuarios');
 
-  // NUEVO MÉTODO: Obtener clase CSS para badge según rol
-  getBadgeClassForRole(role) {
-    const classes = {
-      'Administrador': 'bg-danger',
-      'Coordinador': 'bg-success', 
-      'Tecnico': 'bg-warning',
-      'Botanico': 'bg-info'
-    };
-    return classes[role] || 'bg-secondary';
-  },
+  if (!tablaUsuarios || !totalUsuarios) return;
 
-  // NUEVO MÉTODO: Mostrar modal para nuevo usuario
-  mostrarModalNuevoUsuario() {
-    showToast('Funcionalidad de nuevo usuario en desarrollo', 'info');
-  },
+  fetch(`${API_BASE}/personas`)
+    .then(r => r.json())
+    .then(data => {
+      console.log('[IFN] Respuesta lista personas:', data);
 
-  // NUEVO MÉTODO: Editar usuario
-  editarUsuario(id) {
-    showToast(`Editar usuario ${id} - En desarrollo`, 'info');
-  },
+      if (!data.ok) {
+        showToast(data.message || 'No se pudieron cargar los usuarios.', 'danger');
+        tablaUsuarios.innerHTML = '';
+        totalUsuarios.textContent = 'Total: 0 usuarios';
+        return;
+      }
 
-  // NUEVO MÉTODO: Activar usuario
-  activarUsuario(id) {
-    if (confirm('¿Estás seguro de que quieres activar este usuario?')) {
-      showToast('Usuario activado', 'success');
-      // Aquí iría la lógica real para activar el usuario
-      this.cargarTablaUsuarios(); // Recargar tabla
-    }
-  },
+      const personas = data.data || [];
+      totalUsuarios.textContent = `Total: ${personas.length} usuarios`;
 
-  // NUEVO MÉTODO: Desactivar usuario
-  desactivarUsuario(id) {
-    if (id === State.user?.id) {
-      showToast('No puedes desactivar tu propio usuario', 'warning');
-      return;
-    }
-    
-    if (confirm('¿Estás seguro de que quieres desactivar este usuario?')) {
-      showToast('Usuario desactivado', 'success');
-      // Aquí iría la lógica real para desactivar el usuario
-      this.cargarTablaUsuarios(); // Recargar tabla
-    }
-  },
+      tablaUsuarios.innerHTML = personas.map((p, index) => {
+        const correoPk = p.correo;                 // PK real
+        const numero   = index + 1;                // ID visible
+        const rolFront = (p.tipo_usuario || '').trim();
+        const fecha    = p.fecha_creacion
+          ? new Date(p.fecha_creacion).toLocaleDateString()
+          : '-';
 
-  // Actualizar navegación según rol del usuario
+        return `
+          <tr>
+            <td>${numero}</td>
+            <td>${p.nombre_completo || ''}</td>
+            <td>${p.correo || ''}</td>
+
+            <td>
+              <span class="badge ${App.getBadgeClassForRole(rolFront)}">
+                ${rolFront || 'Sin rol'}
+              </span>
+            </td>
+
+            <td><span class="badge bg-success">Activo</span></td>
+
+            <td>${fecha}</td>
+
+            <td>
+              <button class="btn btn-sm btn-outline-primary"
+                      onclick="App.editarUsuario('${correoPk}')"
+                      title="Editar">
+                <i class="bi bi-pencil"></i>
+              </button>
+
+              <button class="btn btn-sm btn-outline-warning ms-1"
+                      onclick="App.desactivarUsuario('${correoPk}')"
+                      title="Eliminar usuario">
+                <i class="bi bi-person-x"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    })
+    .catch(err => {
+      console.error('[IFN] Error cargando usuarios:', err);
+      showToast('Error en el servidor al cargar usuarios.', 'danger');
+    });
+},
+
+
+// ===============================
+// Rol → color del badge
+// ===============================
+getBadgeClassForRole(role) {
+  const classes = {
+    'Administrador': 'bg-danger',
+    'Coordinador': 'bg-success',
+    'Tecnico': 'bg-warning',
+    'Botanico': 'bg-info'
+  };
+  return classes[role] || 'bg-secondary';
+},
+
+
+// ===============================
+// Crear nuevo usuario (POST /personas)
+// ===============================
+mostrarModalNuevoUsuario() {
+  const nombre = prompt('Nombre completo del usuario:');
+  if (!nombre) return;
+
+  const correo = prompt('Correo electrónico:');
+  if (!correo) return;
+
+  const password = prompt('Contraseña (mínimo 4 caracteres):');
+  if (!password || password.length < 4) {
+    showToast('La contraseña debe tener al menos 4 caracteres.', 'warning');
+    return;
+  }
+
+  const tipoUsuario = prompt(
+    'Rol del usuario (Administrador, Coordinador, Botánico, Técnico):',
+    'Botánico'
+  );
+  if (!tipoUsuario) return;
+
+  const documento = prompt('Documento (obligatorio):');
+  if (!documento) {
+    showToast('El documento es obligatorio.', 'warning');
+    return;
+  }
+
+  fetch(`${API_BASE}/personas`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      correo,
+      nombre_completo: nombre,
+      documento,
+      password,
+      tipo_usuario: tipoUsuario,
+    }),
+  })
+    .then(r => r.json())
+    .then(data => {
+      console.log('[IFN] Respuesta crear usuario:', data);
+      if (!data.ok) {
+        showToast(data.message || 'No se pudo crear el usuario.', 'danger');
+        return;
+      }
+      showToast('Usuario creado correctamente.', 'success');
+      App.cargarTablaUsuarios();
+    })
+    .catch(err => {
+      console.error('[IFN] Error creando usuario:', err);
+      showToast('Error en el servidor al crear usuario.', 'danger');
+    });
+},
+
+
+// ===============================
+// Editar usuario (PUT /personas/{correo})
+// ===============================
+editarUsuario(correo) {
+  if (!correo) return;
+
+  // 1) Obtener datos actuales del usuario
+  fetch(`${API_BASE}/personas/${encodeURIComponent(correo)}`)
+    .then(r => r.json())
+    .then(data => {
+      console.log('[IFN] Datos persona para editar:', data);
+
+      if (!data.ok) {
+        showToast(data.message || 'Usuario no encontrado.', 'danger');
+        return;
+      }
+
+      const p = data.data;
+
+      // 2) Prompt con datos actuales
+      const nuevoNombre = prompt('Nombre completo:', p.nombre_completo || '');
+      if (!nuevoNombre) return;
+
+      const nuevoCorreo = prompt('Correo electrónico:', p.correo || '');
+      if (!nuevoCorreo) return;
+
+      const nuevoRol = prompt(
+        'Rol (Administrador, Coordinador, Botánico, Técnico):',
+        p.tipo_usuario || ''
+      );
+      if (!nuevoRol) return;
+
+      const nuevoDocumento = prompt(
+        'Documento:',
+        p.documento || ''
+      ) || '';
+
+      const nuevaPassword = prompt(
+        'Nueva contraseña (deja vacío para NO cambiarla):',
+        ''
+      );
+
+      // 3) Construir payload
+      const payload = {
+        correo: nuevoCorreo,
+        nombre_completo: nuevoNombre,
+        documento: nuevoDocumento,
+        tipo_usuario: nuevoRol,
+      };
+
+      if (nuevaPassword && nuevaPassword.trim().length >= 4) {
+        payload.password = nuevaPassword.trim();
+      }
+
+      // 4) PUT al backend
+      return fetch(`${API_BASE}/personas/${encodeURIComponent(correo)}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+    })
+    .then(r => (r ? r.json() : null))
+    .then(data => {
+      if (!data) return;
+      console.log('[IFN] Respuesta editar usuario:', data);
+
+      if (!data.ok) {
+        showToast(data.message || 'No se pudo actualizar el usuario.', 'danger');
+        return;
+      }
+
+      showToast('Usuario actualizado correctamente.', 'success');
+      App.cargarTablaUsuarios();
+    })
+    .catch(err => {
+      console.error('[IFN] Error editando usuario:', err);
+      showToast('Error en el servidor al editar usuario.', 'danger');
+    });
+},
+
+
+// ===============================
+// Eliminar usuario (DELETE /personas/{correo})
+// ===============================
+desactivarUsuario(correo) {
+  if (!correo) return;
+
+  // Evitar borrarse a sí mismo
+  if (correo === State.user?.email) {
+    showToast('No puedes eliminar tu propio usuario.', 'warning');
+    return;
+  }
+
+  if (!confirm('¿Estás seguro de que quieres eliminar este usuario?')) {
+    return;
+  }
+
+  fetch(`${API_BASE}/personas/${encodeURIComponent(correo)}`, {
+    method: 'DELETE',
+  })
+    .then(r => r.json())
+    .then(data => {
+      console.log('[IFN] Respuesta eliminar usuario:', data);
+
+      if (!data.ok) {
+        showToast(data.message || 'No se pudo eliminar el usuario.', 'danger');
+        return;
+      }
+
+      showToast('Usuario eliminado correctamente.', 'success');
+      App.cargarTablaUsuarios();
+    })
+    .catch(err => {
+      console.error('[IFN] Error eliminando usuario:', err);
+      showToast('Error en el servidor al eliminar usuario.', 'danger');
+    });
+},
+
+
   actualizarNavegacion() {
     const userRole = State.user?.role;
     
-    // Ocultar todos los elementos de navegación primero
     qsa('[data-role-visible]').forEach(el => {
       el.classList.add('d-none');
     });
     
-    // Mostrar elementos según el rol
     if (userRole) {
       qsa(`[data-role-visible*="${userRole}"]`).forEach(el => {
         el.classList.remove('d-none');
@@ -1217,7 +1514,6 @@ const App = {
     }
   },
 
-  // Actualizar botones de autenticación
   actualizarBotonesAuth() {
     const btnLogin = qs('#btnLogin');
     const btnLogout = qs('#btnLogout');
@@ -1231,7 +1527,6 @@ const App = {
     }
   },
 
-  // Validar permisos para acceder a módulos
   validarPermiso(rolRequerido, modulo) {
     if (State.user?.role !== rolRequerido) {
       const permisoElement = qs(`#permiso${modulo.charAt(0).toUpperCase() + modulo.slice(1)}`);
@@ -1244,7 +1539,6 @@ const App = {
     return true;
   },
 
-  // Mostrar información de estado del árbol según rol
   mostrarInfoEstadoArbol() {
     const infoElement = qs('#infoEstadoArbol');
     const textoElement = qs('#textoEstadoArbol');
@@ -1262,7 +1556,6 @@ const App = {
     }
   },
 
-  // Actualizar UI de borradores en el dashboard
   actualizarBorradoresUI() {
     const borradoresSection = qs('#borradoresSection');
     const borradoresCount = qs('#borradoresCount');
@@ -1273,13 +1566,11 @@ const App = {
     const borradoresActivos = Object.values(State.borradores).filter(b => b !== null && b.data);
     const tieneBorradores = borradoresActivos.length > 0;
     
-    // Mostrar/ocultar sección
     borradoresSection.classList.toggle('d-none', !tieneBorradores || !State.user);
     
     if (tieneBorradores) {
       borradoresCount.textContent = borradoresActivos.length;
       
-      // Listar borradores
       listaBorradores.innerHTML = borradoresActivos.map(borrador => `
         <div class="draft-item p-2 mb-2 rounded border">
           <div class="d-flex justify-content-between align-items-center">
@@ -1335,7 +1626,6 @@ const App = {
       State.borradores[tipo] = null;
       saveBorradores();
       
-      // Limpiar formulario
       const formId = `form${tipo.charAt(0).toUpperCase() + tipo.slice(1)}`;
       const form = qs(`#${formId}`);
       if (form) form.reset();
@@ -1346,23 +1636,65 @@ const App = {
     }
   },
 
-  updateSubparcelas(conglomerado = null) {
+  updateSubparcelas() {
     const congSelect = qs('#arCong');
-    const subSelect = qs('#arSub');
-    
+    const subSelect  = qs('#arSub');
+
     if (!congSelect || !subSelect) return;
-    
-    const selectedCong = conglomerado || congSelect.value;
-    const subparcelasFiltradas = selectedCong ? 
-      State.data.subparcelas.filter(s => s.conglomerado === selectedCong) : 
-      State.data.subparcelas;
-      
-    fillSelect(subSelect, subparcelasFiltradas, s=>`<option value="${s.codigo}">${s.codigo}</option>`);
+
+    const codigo = congSelect.value.trim();
+
+    subSelect.innerHTML = '<option value="">Seleccione…</option>';
+    subSelect.disabled = true;
+
+    if (!codigo) {
+      return;
+    }
+
+    console.log('[IFN] Cargando subparcelas desde backend para', codigo);
+
+    const token = State?.user?.token || localStorage.getItem('IFN_TOKEN');
+
+    fetch(`http://127.0.0.1:8000/api/conglomerados/${encodeURIComponent(codigo)}/subparcelas`, {
+      headers: {
+        'Accept': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      }
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          console.error('[IFN] Error HTTP al cargar subparcelas:', res.status, data);
+          subSelect.innerHTML = '<option value="">Error cargando subparcelas</option>';
+          return;
+        }
+
+        const lista = data.subparcelas || [];
+        if (!lista.length) {
+          subSelect.innerHTML = '<option value="">No hay subparcelas para este conglomerado</option>';
+          return;
+        }
+
+        subSelect.innerHTML =
+          '<option value="">Seleccione…</option>' +
+          lista.map(sp => {
+            const id   = sp.id_subparcela ?? sp.id;
+            const cod  = sp.codigo_subparcela ?? sp.codigo;
+            const num  = sp.numero_subparcela ?? '';
+            return `<option value="${id}">Subparcela ${num} — ${cod}</option>`;
+          }).join('');
+
+        subSelect.disabled = false;
+      })
+      .catch((err) => {
+        console.error('[IFN] Error al conectar para cargar subparcelas:', err);
+        subSelect.innerHTML = '<option value="">Error cargando subparcelas</option>';
+      });
   },
 
   // Método de login antiguo (para compatibilidad)
   login(role){ 
-    // Buscar un usuario con ese rol para mantener compatibilidad
     const usuario = UsersDB.usuarios.find(u => u.role === role && u.activo);
     if (usuario) {
       this.loginSuccess({
@@ -1382,215 +1714,442 @@ const App = {
     this.go('landing'); 
     showToast('Sesión cerrada', 'secondary'); 
     
-    // Actualizar navegación y botones de auth
     this.actualizarNavegacion();
     this.actualizarBotonesAuth();
   },
 
-  saveConglomerado(ev){
+  saveConglomerado(ev) {
     ev.preventDefault();
-    
-    // Validar permisos
+
     if (!this.validarPermiso('Coordinador', 'conglomerado')) return;
-    
+
     const form = ev.target;
     const fd = new FormData(form);
     const obj = Object.fromEntries(fd.entries());
     const msgEl = qs('#msgCong');
-    
+
+    const normalizeDate = (value) => {
+      if (!value) return null;
+      if (value.includes('/')) {
+        const [day, month, year] = value.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      return value;
+    };
+
+    const fechaInicioRaw = (obj.fechaInicio || '').trim();
+    const fechaFinalRaw  = (obj.fechaFinal  || '').trim();
+
+    if (!fechaInicioRaw) {
+      msgEl.innerHTML = alertBox('danger', 'La fecha de inicio es obligatoria.');
+      return;
+    }
+
+    obj.fecha_inicio = normalizeDate(fechaInicioRaw);
+    obj.fecha_final  = fechaFinalRaw ? normalizeDate(fechaFinalRaw) : null;
+
+    if (!obj.fecha_inicio) {
+      msgEl.innerHTML = alertBox('danger', 'La fecha de inicio es inválida.');
+      return;
+    }
+
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
       return;
     }
 
-    // Validaciones adicionales
     const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
-    if(!isValidCoordinate(lat, lng)){
-      msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas. Latitud debe estar entre -90 y 90, Longitud entre -180 y 180.');
+    if (!isValidCoordinate(lat, lng)) {
+      msgEl.innerHTML = alertBox(
+        'danger',
+        'Coordenadas inválidas. Latitud debe estar entre -90 y 90, Longitud entre -180 y 180.'
+      );
       return;
     }
 
-    if(!isValidDate(obj.fecha)){
-      msgEl.innerHTML = alertBox('danger', 'Fecha inválida. No puede ser futura.');
+    const fechaInicio = obj.fecha_inicio;
+    const fechaFinal  = obj.fecha_final;
+
+    if (!isValidDate(fechaInicio)) {
+      msgEl.innerHTML = alertBox(
+        'danger',
+        'Fecha de inicio inválida. No puede ser futura.'
+      );
       return;
     }
 
-    if(State.data.conglomerados.some(c=>c.codigo===obj.codigo)){
-      msgEl.innerHTML = alertBox('danger', 'El código del conglomerado ya existe.'); 
+    if (fechaFinal && !isValidDate(fechaFinal)) {
+      msgEl.innerHTML = alertBox(
+        'danger',
+        'Fecha final inválida. No puede ser futura.'
+      );
       return;
     }
 
-    State.data.conglomerados.push({ 
-      id: Date.now(), 
-      ...obj, 
-      estado:'registrado',
+    if (State.data.conglomerados.some(c => c.codigo === obj.codigo)) {
+      msgEl.innerHTML = alertBox('danger', 'El código del conglomerado ya existe.');
+      return;
+    }
+
+    const fechaFront = fechaInicio;
+
+    State.data.conglomerados.push({
+      id: Date.now(),
+      ...obj,
+      fecha: fechaFront,
+      fecha_inicio: fechaInicio,
+      fecha_final: fechaFinal,
+      estado: obj.estado || 'registrado',
       fechaCreacion: new Date().toISOString(),
-      adjuntos: form.adjuntos?.files ? Array.from(form.adjuntos.files).map(f => f.name) : []
+      adjuntos: form.adjuntos?.files
+        ? Array.from(form.adjuntos.files).map(f => f.name)
+        : []
     });
-    
-    // Limpiar borrador después de guardar exitosamente
+
+    const payload = {
+      codigo: obj.codigo,
+      region: obj.region || null,
+      latitud: obj.latitud,
+      longitud: obj.longitud,
+      altitud: obj.altitud || null,
+      fecha_inicio: fechaInicio,
+      fecha_final: fechaFinal,
+      brigada: obj.brigada,
+      estado: obj.estado || 'registrado',
+      correo: obj.correo || null
+    };
+
+    fetch('http://127.0.0.1:8000/api/conglomerados', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          console.error('Error de validación al crear el conglomerado', data);
+          if (data.errors) {
+            const mensajes = [];
+            for (const campo in data.errors) {
+              mensajes.push(`${campo}: ${data.errors[campo].join(', ')}`);
+            }
+            msgEl.innerHTML = alertBox('danger', mensajes.join('<br>'));
+          } else {
+            msgEl.innerHTML = alertBox(
+              'danger',
+              data.message || 'Error al guardar el conglomerado en el servidor.'
+            );
+          }
+          throw data;
+        }
+
+        console.log('Guardado en backend:', data);
+        showToast('Conglomerado guardado en la base de datos', 'success');
+      })
+      .catch((err) => {
+        console.error('Error guardando en backend', err);
+        showToast('Se guardó localmente pero falló el envío al servidor', 'warning');
+      });
+
     State.borradores.conglomerado = null;
     saveBorradores();
     saveToStorage();
-    
+
     msgEl.innerHTML = alertBox('success', 'Conglomerado registrado exitosamente');
     showToast('Conglomerado guardado', 'success');
     form.reset();
     form.classList.remove('was-validated');
-    
-    if(State.mapReady){
-      this.mapa.addMarker([lat, lng], `${obj.codigo} — ${obj.municipio}`, 'conglomerado');
+
+    if (State.mapReady) {
+      this.mapa.addMarker(
+        [lat, lng],
+        `${obj.codigo} — ${obj.municipio || ''}`,
+        'conglomerado'
+      );
       this.mapa.fit();
     }
-    
+
     this.actualizarBorradoresUI();
   },
 
-  saveSubparcela(ev){
+  saveSubparcela(ev) {
     ev.preventDefault();
-    
-    // Validar permisos
+
     if (!this.validarPermiso('Coordinador', 'subparcela')) return;
-    
+
     const form = ev.target;
-    const fd = new FormData(form);
-    const obj = Object.fromEntries(fd.entries());
+    const fd   = new FormData(form);
+    const obj  = Object.fromEntries(fd.entries());
     const msgEl = qs('#msgSub');
-    
+
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
       return;
     }
 
-    if(!State.data.conglomerados.some(c=>c.codigo===obj.conglomerado)){
-      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.'); 
-      return;
+    const codigoConglomerado = obj.conglomerado;
+    const numeroSubparcela = parseInt(obj.numeroSubparcela, 10);
+
+    const codigoSubparcela =
+      obj.codigo && obj.codigo.trim() !== ''
+        ? obj.codigo.trim()
+        : `${codigoConglomerado}-SP${numeroSubparcela}`;
+
+    const fechaLevantamiento = obj.fechaLevantamiento;
+    const cobertura = obj.cobertura;
+
+    let alteraciones = '';
+    if (form.alteraciones) {
+      alteraciones = Array.from(form.alteraciones.selectedOptions)
+        .map(o => o.value)
+        .join(', ');
     }
 
-    const lat = toNum(obj.latitud), lng = toNum(obj.longitud);
-    if(!isValidCoordinate(lat, lng)){
-      msgEl.innerHTML = alertBox('danger', 'Coordenadas inválidas.');
-      return;
-    }
+    const observaciones = obj.observaciones || '';
 
-    if(State.data.subparcelas.some(s=>s.codigo===obj.codigo && s.conglomerado===obj.conglomerado)){
-      msgEl.innerHTML = alertBox('danger', 'El código de la subparcela ya existe en ese conglomerado.'); 
-      return;
-    }
+    const payload = {
+      codigo_conglomerado: codigoConglomerado,
+      numero_subparcela: numeroSubparcela,
+      codigo_subparcela: codigoSubparcela,
+      fecha_levantamiento: fechaLevantamiento,
+      cobertura: cobertura,
+      alteraciones: alteraciones,
+      observaciones: observaciones
+    };
 
-    State.data.subparcelas.push({ 
-      id: Date.now(), 
-      ...obj, 
-      estado:'registrado',
-      fechaCreacion: new Date().toISOString()
-    });
-    
-    // Limpiar borrador después de guardar exitosamente
-    State.borradores.subparcela = null;
-    saveBorradores();
-    saveToStorage();
-    
-    msgEl.innerHTML = alertBox('success', 'Subparcela registrada exitosamente');
-    showToast('Subparcela guardada', 'success');
-    form.reset();
-    form.classList.remove('was-validated');
-    
-    if(State.mapReady){
-      this.mapa.addMarker([lat, lng], `${obj.codigo} (SP)`, 'subparcela');
-      this.mapa.fit();
-    }
-    
-    this.actualizarBorradoresUI();
+    console.log('[IFN] Enviando subparcela al backend:', payload);
+
+    fetch('http://127.0.0.1:8000/api/subparcelas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+          console.error('Error al crear subparcela en backend:', data);
+
+          if (data.errors) {
+            const firstField = Object.keys(data.errors)[0];
+            const firstMsg   = data.errors[firstField][0] || 'Error de validación.';
+            msgEl.innerHTML = alertBox('danger', `Error de validación: ${firstMsg}`);
+          } else {
+            msgEl.innerHTML = alertBox(
+              'danger',
+              data.message || 'Error al guardar la subparcela en el servidor.'
+            );
+          }
+
+          throw data;
+        }
+
+        console.log('Subparcela guardada en backend:', data);
+
+        if (!State.data.subparcelas) {
+          State.data.subparcelas = [];
+        }
+
+        State.data.subparcelas.push({
+          id_subparcela: data.subparcela?.id_subparcela ?? Date.now(),
+          codigo_conglomerado: payload.codigo_conglomerado,
+          numero_subparcela: payload.numero_subparcela,
+          codigo_subparcela: payload.codigo_subparcela,
+          cobertura: payload.cobertura,
+          alteraciones: payload.alteraciones,
+          observaciones: payload.observaciones,
+          fecha_levantamiento: payload.fecha_levantamiento
+        });
+
+        saveToStorage?.();
+
+        if (State.borradores?.subparcela) {
+          State.borradores.subparcela = null;
+          saveBorradores?.();
+        }
+
+        msgEl.innerHTML = alertBox('success', 'Subparcela registrada exitosamente');
+        showToast('Subparcela guardada en la base de datos', 'success');
+
+        form.reset();
+        form.classList.remove('was-validated');
+        this.actualizarBorradoresUI?.();
+
+      })
+      .catch((err) => {
+        console.error('Error guardando subparcela en backend:', err);
+        showToast('Se guardó en el navegador pero falló el envío al servidor', 'warning');
+      });
   },
 
-  saveArbol(ev){
+  // NUEVO saveArbol (sin estado, usando backend)
+  saveArbol(ev) {
     ev.preventDefault();
+
     const form = ev.target;
-    const fd = new FormData(form);
-    const obj = Object.fromEntries(fd.entries());
+    const fd   = new FormData(form);
+    const obj  = Object.fromEntries(fd.entries());
     const msgEl = qs('#msgArb');
-    
+
     if (!form.checkValidity()) {
       form.classList.add('was-validated');
       return;
     }
 
-    if(!State.data.conglomerados.some(c=>c.codigo===obj.conglomerado)){
-      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.'); 
+    const cong = State.data.conglomerados.find(c =>
+      String(c.codigo ?? c.codigo_conglomerado) === String(obj.conglomerado)
+    );
+
+    if (!cong) {
+      console.warn('[IFN] No se encontró conglomerado en State para código:', obj.conglomerado, 'lista:', State.data.conglomerados);
+      msgEl.innerHTML = alertBox('danger', 'Conglomerado inexistente.');
       return;
     }
 
-    if(!State.data.subparcelas.some(s=>s.codigo===obj.subparcela && s.conglomerado===obj.conglomerado)){
-      msgEl.innerHTML = alertBox('danger', 'Subparcela no encontrada en el conglomerado seleccionado.'); 
+    const subp = State.data.subparcelas.find(s =>
+      String(s.id_subparcela ?? s.id) === String(obj.subparcela)
+    );
+
+    if (!subp) {
+      console.warn('[IFN] No se encontró subparcela en State para cong:', obj.conglomerado, 'subparcela (id):', obj.subparcela, 'lista State.data.subparcelas:', State.data.subparcelas);
+      msgEl.innerHTML = alertBox('danger', 'Subparcela no pertenece a ese conglomerado.');
       return;
     }
 
-    // Validar nombre científico (ahora opcional para permitir validación manual)
-    const sci = obj.nombreCientifico.trim();
-    if (sci && !isValidScientificName(sci)) {
-      msgEl.innerHTML = alertBox('warning', 'Formato de nombre científico podría ser incorrecto. Use: Género especie (ej: Quercus humboldtii). Puede continuar para validación manual.');
-      // No return aquí - permitir continuar para validación manual
+    const payload = {
+      id_conglomerado: cong.id_conglomerado ?? cong.id,
+      id_subparcela:   subp.id_subparcela   ?? subp.id,
+
+      codigo_conglomerado: obj.conglomerado,
+      codigo_subparcela:   obj.subparcela,
+
+      categoria:         obj.categoria,
+      distancia:         obj.distancia || 0,
+      nombre_cientifico: obj.nombreCientifico || null,
+      nombre_comun:      obj.nombreComun      || null,
+      especie:           obj.especie          || null,
+      dap:               obj.dap              || null,
+      altura_fuste:      obj.alturaFuste      || null,
+      altura_total:      obj.alturaTotal      || null,
+      uso_comun:         obj.usoComun         || null,
+      observaciones:     obj.observaciones    || null
+    };
+
+    console.log('[IFN] Enviando árbol al backend:', payload);
+
+    fetch('http://127.0.0.1:8000/api/arboles', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+      .then(async (res) => {
+        const data = await res.json().catch(() => ({}));
+        console.log('[IFN] Respuesta al crear árbol:', data);
+
+        if (!res.ok || data.ok === false) {
+          const msg = data.message || 'Error al registrar árbol.';
+          msgEl.innerHTML = alertBox('danger', msg);
+          console.error('[ERR árbol]', data);
+          return;
+        }
+
+        msgEl.innerHTML = alertBox('success', 'Árbol registrado correctamente.');
+        showToast('Árbol registrado en la base de datos', 'success');
+        form.reset();
+        form.classList.remove('was-validated');
+      })
+      .catch(err => {
+        console.error('[IFN] Error al conectar con backend', err);
+        msgEl.innerHTML = alertBox('danger', 'Error al conectar con el servidor.');
+        showToast('Error al conectar con el servidor', 'danger');
+      });
+  },
+
+  renderPendientes() {
+  const tb = qs('#tablaPendientes tbody');
+  if (!tb) return;
+
+  // Fila por defecto mientras carga
+  tb.innerHTML = `
+    <tr>
+      <td colspan="7" class="text-center text-muted py-3">
+        Cargando registros pendientes…
+      </td>
+    </tr>
+  `;
+
+  fetch('http://127.0.0.1:8000/api/arboles/pendientes', {
+    headers: {
+      'Accept': 'application/json'
     }
+  })
+    .then(res => res.json())
+    .then(json => {
+      const rows = Array.isArray(json)
+        ? json
+        : (Array.isArray(json.data) ? json.data : []);
 
-    // Determinar estado según el actor (Técnico → Pendiente, Botánico → Validado)
-    const estado = State.user?.role === 'Botanico' ? 'validado' : 'pendiente_validacion';
-    const validadoPor = estado === 'validado' ? State.user.role : '';
+      if (!rows.length) {
+        tb.innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center text-muted py-3">
+              No hay registros pendientes de validación.
+            </td>
+          </tr>
+        `;
+        return;
+      }
 
-    State.data.arboles.push({ 
-      id: Date.now(), 
-      ...obj, 
-      nombreCientifico: sci, 
-      estado, 
-      validadoPor, 
-      fecha: new Date().toISOString().slice(0,10),
-      fechaRegistro: new Date().toISOString(),
-      evidencias: form.evidencias?.files ? Array.from(form.evidencias.files).map(f => f.name) : []
+      tb.innerHTML = rows.map(a => `
+        <tr>
+          <td>${a.id}</td>
+          <td>${a.conglomerado || '-'}</td>
+          <td>${a.subparcela || '-'}</td>
+          <td><em class="nombre-cientifico">${a.nombre_cientifico || '-'}</em></td>
+          <td>
+            <span class="badge estado-pendiente">
+              ${a.estado ? a.estado.replace('_', ' ') : 'pendiente'}
+            </span>
+          </td>
+          <td>${a.fecha || '-'}</td>
+          <td>
+            <button class="btn btn-sm btn-success rounded-pill" onclick="App.validar(${a.id})">
+              <i class="bi bi-check-lg me-1"></i>Validar
+            </button>
+            <button class="btn btn-sm btn-outline-primary rounded-pill ms-1" onclick="App.editarArbol(${a.id})">
+              <i class="bi bi-pencil"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    })
+    .catch(err => {
+      console.error('[IFN] Error al cargar pendientes desde el servidor:', err);
+      tb.innerHTML = `
+        <tr>
+          <td colspan="7" class="text-center text-danger py-3">
+            Error al cargar datos desde el servidor.
+          </td>
+        </tr>
+      `;
     });
-    
-    // Limpiar borrador después de guardar exitosamente
-    State.borradores.arbol = null;
-    saveBorradores();
-    saveToStorage();
-    
-    const estadoMsg = estado === 'validado' ? 'validado' : 'registrado (pendiente de validación)';
-    msgEl.innerHTML = alertBox('success', `Árbol ${estadoMsg} exitosamente`);
-    showToast(`Árbol ${estadoMsg}`, 'success');
-    form.reset();
-    form.classList.remove('was-validated');
-    
-    this.actualizarBorradoresUI();
-  },
+},
 
-  renderPendientes(){
-    const tb = qs('#tablaPendientes tbody');
-    if (!tb) return;
-    
-    const pend = State.data.arboles.filter(a=>a.estado==='pendiente_validacion');
-    tb.innerHTML = pend.length ? pend.map(a=>`
-      <tr>
-        <td>${a.id}</td>
-        <td>${a.conglomerado}</td>
-        <td>${a.subparcela}</td>
-        <td><em class="nombre-cientifico">${a.nombreCientifico}</em></td>
-        <td><span class="badge estado-pendiente">Pendiente</span></td>
-        <td>${a.fecha}</td>
-        <td>
-          <button class="btn btn-sm btn-success rounded-pill" onclick="App.validar(${a.id})">
-            <i class="bi bi-check-lg me-1"></i>Validar
-          </button>
-          <button class="btn btn-sm btn-outline-primary rounded-pill ms-1" onclick="App.editarArbol(${a.id})">
-            <i class="bi bi-pencil"></i>
-          </button>
-        </td>
-      </tr>`).join('') 
-      : `<tr><td colspan="7" class="text-center text-muted py-3">No hay registros pendientes de validación.</td></tr>`;
-  },
 
   editarArbol(id) {
     const arbol = State.data.arboles.find(a => a.id === id);
     if (!arbol) return;
     
-    // Llenar formulario de árbol con datos existentes
     this.go('arbol');
     setTimeout(() => {
       const form = qs('#formArbol');
@@ -1615,7 +2174,6 @@ const App = {
     const arbol = State.data.arboles.find(a => a.id === id);
     if (!arbol) return;
     
-    // Mostrar modal de validación con opción para corregir nombre científico
     this.mostrarModalValidacion(arbol);
   },
 
@@ -1655,7 +2213,6 @@ const App = {
       </div>
     `;
     
-    // Crear modal dinámicamente
     const modalContainer = document.createElement('div');
     modalContainer.innerHTML = modalHTML;
     document.body.appendChild(modalContainer);
@@ -1663,40 +2220,81 @@ const App = {
     const modal = new bootstrap.Modal(document.getElementById('modalValidacion'));
     modal.show();
     
-    // Limpiar después de cerrar
     document.getElementById('modalValidacion').addEventListener('hidden.bs.modal', function () {
       modalContainer.remove();
     });
   },
 
-  confirmarValidacion(id) {
-    const nombreCientificoValidado = document.getElementById('nombreCientificoValidado').value;
-    const observacionesValidacion = document.getElementById('observacionesValidacion').value;
-    
-    if (!nombreCientificoValidado.trim()) {
-      showToast('El nombre científico es requerido', 'warning');
-      return;
-    }
-    
-    State.data.arboles = State.data.arboles.map(a=>
-      a.id===id ? {
-        ...a, 
-        estado:'validado', 
-        validadoPor: State.user.role,
-        nombreCientifico: nombreCientificoValidado,
-        observaciones: a.observaciones + (observacionesValidacion ? ` | Validación: ${observacionesValidacion}` : '')
-      } : a
-    );
-    
-    saveToStorage();
-    this.renderPendientes(); 
-    
-    // Cerrar modal
-    const modal = bootstrap.Modal.getInstance(document.getElementById('modalValidacion'));
-    modal.hide();
-    
-    showToast('Registro validado exitosamente', 'success');
-  },
+confirmarValidacion(id) {
+  const nombreCientificoValidado = document.getElementById('nombreCientificoValidado').value;
+  const observacionesValidacion = document.getElementById('observacionesValidacion').value || '';
+
+  if (!nombreCientificoValidado.trim()) {
+    showToast('El nombre científico es requerido', 'warning');
+    return;
+  }
+
+  const payload = {
+    nombre_cientifico: nombreCientificoValidado.trim(),
+    observaciones_validacion: observacionesValidacion.trim() || null
+  };
+
+  fetch(`http://127.0.0.1:8000/api/arboles/${id}/validar`, {
+    method: 'PUT',
+    headers: {
+      'Accept': 'application/json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      console.log('[IFN] Respuesta validación árbol:', data);
+
+      if (!res.ok || data.ok === false) {
+        if (data.errors) {
+          const firstField = Object.keys(data.errors)[0];
+          const firstMsg   = data.errors[firstField][0] || 'Error de validación.';
+          showToast(firstMsg, 'danger');
+        } else {
+          showToast(data.message || 'Error al validar el árbol en el servidor', 'danger');
+        }
+        return;
+      }
+
+      // Actualizar árbol en State (para reportes, etc.)
+      State.data.arboles = State.data.arboles.map(a =>
+        a.id === id
+          ? {
+              ...a,
+              estado: 'validado',
+              validadoPor: State.user?.role || a.validadoPor || 'Botanico',
+              nombreCientifico: nombreCientificoValidado.trim(),
+              observaciones: a.observaciones
+                ? a.observaciones + (observacionesValidacion ? ` | Validación: ${observacionesValidacion}` : '')
+                : (observacionesValidacion ? `Validación: ${observacionesValidacion}` : a.observaciones)
+            }
+          : a
+      );
+
+      saveToStorage();
+
+      // 🔁 Volver a cargar la tabla usando el endpoint que SÍ funciona
+      this.cargarPendientesValidacion();
+
+      const modalEl = document.getElementById('modalValidacion');
+      if (modalEl) {
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal?.hide();
+      }
+
+      showToast('Registro validado exitosamente', 'success');
+    })
+    .catch((err) => {
+      console.error('[IFN] Error al conectar al validar árbol:', err);
+      showToast('Error al conectar con el servidor al validar el árbol', 'danger');
+    });
+},
 
   renderReportes(){
     const fFechaDesde = qs('#fFechaDesde').value;
@@ -1708,7 +2306,6 @@ const App = {
     
     let rows = State.data.arboles;
     
-    // Aplicar filtros según caso de uso
     if (fFechaDesde) {
       rows = rows.filter(a => a.fecha >= fFechaDesde);
     }
@@ -1737,7 +2334,6 @@ const App = {
     
     if (!tb || !sinResultados || !contador) return;
     
-    // Mostrar/ocultar mensaje de no resultados
     sinResultados.classList.toggle('d-none', rows.length > 0);
     contador.textContent = `${rows.length} registros`;
     
@@ -1787,7 +2383,6 @@ const App = {
     trs.forEach(tr=>{ 
       const tds = Array.from(tr.querySelectorAll('td')).map(td=>{
         let text = td.innerText.replace(/\n/g,' ').replace(/,/g,';');
-        // Remover etiquetas HTML de los badges
         text = text.replace(/<[^>]*>/g, '').trim();
         return `"${text}"`;
       }); 
@@ -1807,10 +2402,8 @@ const App = {
 
   exportPDF() {
     showToast('Función de exportación PDF en desarrollo', 'info');
-    // En una implementación real, aquí se integraría con una librería como jsPDF
   },
 
-  // Nuevos métodos para datos de prueba
   generarDatosPrueba() {
     if (confirm('¿Generar 50 registros de árboles de prueba? Esto agregará datos ficticios a la base de datos.')) {
       const count = Database.generateSampleData(50);
@@ -1905,7 +2498,6 @@ const App = {
       </div>
     `;
     
-    // Crear modal dinámicamente
     const modalContainer = document.createElement('div');
     modalContainer.innerHTML = modalHTML;
     document.body.appendChild(modalContainer);
@@ -1913,7 +2505,6 @@ const App = {
     const modal = new bootstrap.Modal(document.getElementById('statsModal'));
     modal.show();
     
-    // Limpiar después de cerrar
     document.getElementById('statsModal').addEventListener('hidden.bs.modal', function () {
       modalContainer.remove();
     });
@@ -1931,7 +2522,6 @@ const App = {
       
       if (!mapEl) return;
       
-      // Verificar si Leaflet está cargado
       if (typeof L === 'undefined') {
         mapError.classList.remove('d-none');
         mapEl.style.display = 'none';
@@ -1943,7 +2533,6 @@ const App = {
       const map = L.map(mapEl).setView(center, 12); 
       State.map = map;
       
-      // Manejar errores de tiles
       map.on('tileerror', function(e) {
         console.warn('Error loading tile:', e);
         mapError.classList.remove('d-none');
@@ -1998,7 +2587,6 @@ const App = {
           } 
         }
         
-        // Marcador temporal
         L.circleMarker([lat,lng], {
           radius: 8,
           color: '#ff6b35',
@@ -2021,7 +2609,6 @@ const App = {
       
       State.markers.clearLayers();
       
-      // Agregar conglomerados
       State.data.conglomerados.forEach(c=>{
         const lat = toNum(c.latitud), lng = toNum(c.longitud);
         if(isFinite(lat) && isFinite(lng) && isValidCoordinate(lat, lng)){
@@ -2037,7 +2624,6 @@ const App = {
         }
       });
       
-      // Agregar subparcelas
       State.data.subparcelas.forEach(s=>{
         const lat = toNum(s.latitud), lng = toNum(s.longitud);
         if(isFinite(lat) && isFinite(lng) && isValidCoordinate(lat, lng)){
@@ -2106,11 +2692,45 @@ const App = {
   }
 };
 
+document.addEventListener('DOMContentLoaded', () => {
+  try {
+    localStorage.removeItem('ifn_user');
+    sessionStorage.removeItem('ifn_user');
+
+    const btnLogin = document.getElementById('btnLogin');
+    const btnLogout = document.getElementById('btnLogout');
+    const body = document.body;
+
+    if (body) {
+      body.classList.remove('user-logged-in');
+    }
+    if (btnLogin) {
+      btnLogin.classList.remove('d-none');
+    }
+    if (btnLogout) {
+      btnLogout.classList.add('d-none');
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    const dateNames = ['fechaInicio', 'fechaFinal', 'fechaLevantamiento'];
+
+    dateNames.forEach((name) => {
+      const input = document.querySelector(`input[name="${name}"]`);
+      if (input) {
+        input.setAttribute('max', today);
+      }
+    });
+
+    console.log('[IFN] Configuración inicial de fechas y login aplicada');
+  } catch (e) {
+    console.error('[IFN] Error configurando fechas / login inicial', e);
+  }
+});
+
 // Boot mejorado
 window.App = App;
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  // --- THEME mejorado ---
   const btn = document.getElementById('themeToggle');
   const icon = document.getElementById('themeIcon');
   
@@ -2135,7 +2755,6 @@ document.addEventListener('DOMContentLoaded', ()=>{
     if(span) span.textContent = t==='dark' ? 'Claro' : 'Oscuro';
   }
   
-  // Inicializar tema
   const storedTheme = getStoredTheme();
   const systemTheme = getSystemTheme();
   setTheme(storedTheme || systemTheme);
@@ -2146,14 +2765,11 @@ document.addEventListener('DOMContentLoaded', ()=>{
     setTheme(next);
   });
   
-  // Escuchar cambios del sistema
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
     if (!getStoredTheme()) {
       setTheme(e.matches ? 'dark' : 'light');
     }
   });
-  
 
-  // Inicializar la aplicación
   App.init();
 });

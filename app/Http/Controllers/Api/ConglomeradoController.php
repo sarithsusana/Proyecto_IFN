@@ -3,63 +3,93 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Conglomerado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use App\Models\Conglomerado;
 
 class ConglomeradoController extends Controller
 {
-    public function index(Request $request) {
-        $q = Conglomerado::query();
+    public function store(Request $request)
+    {
+        try {
 
-        if ($s = $request->get('search')) {
-            $q->where(function($qq) use ($s) {
-                $qq->where('codigo','like',"%$s%")
-                   ->orWhere('region','like',"%$s%")
-                   ->orWhere('municipio','like',"%$s%");
-            });
+            //------------------------------------
+            // 1) NORMALIZAR INPUTS
+            //------------------------------------
+            $input = $request->all();
+
+            // Normalizar números decimales (coma → punto)
+            foreach (['latitud', 'longitud', 'altitud'] as $campo) {
+                if (isset($input[$campo]) && $input[$campo] !== '') {
+                    $input[$campo] = str_replace(',', '.', $input[$campo]);
+                } else {
+                    $input[$campo] = null;
+                }
+            }
+
+            //------------------------------------
+            // 2) VALIDACIÓN (alineada con la BD)
+            //------------------------------------
+            $validator = Validator::make($input, [
+                'codigo'        => 'required|string|max:50',
+                'region'        => 'required|string|max:100',
+
+                'fecha_inicio'  => 'required|date',
+                'fecha_final'   => 'required|date|after_or_equal:fecha_inicio',
+
+                'brigada'       => 'required|string|max:100',
+                'estado'        => 'required|in:iniciando,Finalizado',
+
+                'latitud'       => 'required|numeric',
+                'longitud'      => 'required|numeric',
+                'altitud'       => 'nullable|numeric',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'ok'          => false,
+                    'message'     => 'Error de validación al crear el conglomerado',
+                    'errors'      => $validator->errors(),
+                    'debug_input' => $input,
+                ], 422);
+            }
+
+            //------------------------------------
+            // 3) CREAR CONGLOMERADO
+            //------------------------------------
+            $conglomerado = new Conglomerado();
+
+            $conglomerado->codigo_conglomerado = $input['codigo'];
+            $conglomerado->region              = $input['region'];
+            $conglomerado->fecha_inicio        = $input['fecha_inicio'];
+            $conglomerado->fecha_final         = $input['fecha_final'];
+            $conglomerado->nombre_brigada      = $input['brigada'];
+            $conglomerado->estado              = $input['estado'];
+            $conglomerado->latitud             = $input['latitud'];
+            $conglomerado->longitud            = $input['longitud'];
+            $conglomerado->altitud             = $input['altitud'];
+
+            // 🔹 Correo: solo si hay usuario autenticado
+            $user = $request->user(); // usuario autenticado (Sanctum, etc.)
+            $conglomerado->correo = $user?->correo ?? null;
+
+            $conglomerado->save();
+
+            //------------------------------------
+            // 4) RESPUESTA
+            //------------------------------------
+            return response()->json([
+                'ok'           => true,
+                'message'      => 'Conglomerado creado correctamente',
+                'conglomerado' => $conglomerado,
+            ], 201);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Error interno al crear el conglomerado',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
-
-        return $q->orderBy('created_at','desc')->paginate(20);
-    }
-
-    public function store(Request $request) {
-        $data = $request->validate([
-            'codigo' => 'required|alpha_dash|unique:conglomerados,codigo',
-            'region' => 'required|string',
-            'municipio' => 'required|string',
-            'vereda' => 'required|string',
-            'fecha' => 'required|date',
-            'brigada' => 'required|string',
-            'latitud' => 'required|numeric|between:-90,90',
-            'longitud' => 'required|numeric|between:-180,180',
-            'observaciones' => 'nullable|string|max:500',
-            'adjuntos' => 'nullable|array',
-        ]);
-        return Conglomerado::create($data);
-    }
-
-    public function update(Request $request, Conglomerado $conglomerado) {
-        $data = $request->validate([
-            'region' => 'sometimes|required|string',
-            'municipio' => 'sometimes|required|string',
-            'vereda' => 'sometimes|required|string',
-            'fecha' => 'sometimes|required|date',
-            'brigada' => 'sometimes|required|string',
-            'latitud' => 'sometimes|required|numeric|between:-90,90',
-            'longitud' => 'sometimes|required|numeric|between:-180,180',
-            'observaciones' => 'nullable|string|max:500',
-            'adjuntos' => 'nullable|array',
-        ]);
-        $conglomerado->update($data);
-        return $conglomerado->fresh();
-    }
-
-    public function destroy(Conglomerado $conglomerado) {
-        $conglomerado->delete();
-        return response()->json(['ok'=>true]);
-    }
-
-    public function list() {
-        return Conglomerado::select('id','codigo')->orderBy('codigo')->get();
     }
 }

@@ -4,28 +4,70 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\User;
-use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
-        $cred = $request->validate([
-            'email' => ['required','email'],
-            'password' => ['required','string'],
-        ]);
+        try {
+            // 1) Validar datos que vienen del formulario
+            $cred = $request->validate([
+                'email'    => ['required', 'email'],
+                'password' => ['required', 'string'],
+            ]);
 
-        $user = User::where('email', $cred['email'])->first();
-        if (!$user || !Hash::check($cred['password'], $user->password)) {
-            return response()->json(['message'=>'Credenciales inválidas'], 401);
+            // 2) BUSCAR EN LA TABLA PERSONA POR LA COLUMNA CORREO
+            $persona = DB::table('persona')
+                ->where('correo', $cred['email'])
+                ->first();
+
+            if (!$persona) {
+                return response()->json([
+                    'ok'      => false,
+                    'message' => 'Usuario y/o contraseña incorrectos.',
+                ], 401);
+            }
+
+            // 3) Comparar contraseña (columna "contraseña" en la tabla)
+            $datosPersona = (array) $persona;
+            $passwordBD   = $datosPersona['contraseña'] ?? null;
+
+            if ($passwordBD !== $cred['password']) {
+                return response()->json([
+                    'ok'      => false,
+                    'message' => 'Usuario y/o contraseña incorrectos.',
+                ], 401);
+            }
+
+            // 4) Normalizar rol para el frontend
+            $rolBD = strtolower($persona->tipo_usuario);
+
+            if (str_starts_with($rolBD, 'admin')) {
+                $rolFront = 'Administrador';
+            } elseif (str_starts_with($rolBD, 'coor')) {
+                $rolFront = 'Coordinador';
+            } elseif (str_starts_with($rolBD, 'bot')) {
+                $rolFront = 'Botanico'; // sin tilde, como en el front
+            } else {
+                $rolFront = 'Tecnico';
+            }
+
+            return response()->json([
+                'ok'   => true,
+                'user' => [
+                    'email'  => $persona->correo,
+                    'nombre' => $persona->nombre_completo,
+                    'role'   => $rolFront,
+                ],
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'ok'      => false,
+                'message' => 'Error interno en el servidor',
+            ], 500);
         }
-
-        $token = $user->createToken('ifn-token')->plainTextToken;
-        return response()->json([
-            'token' => $token,
-            'user' => $user,
-        ]);
     }
 
     public function me(Request $request)
@@ -35,7 +77,6 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
         return response()->json(['message' => 'Sesión cerrada']);
     }
 }
