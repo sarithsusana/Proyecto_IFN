@@ -13,9 +13,9 @@ class ConglomeradoController extends Controller
     {
         try {
 
-            //------------------------------------
+
             // 1) NORMALIZAR INPUTS
-            //------------------------------------
+
             $input = $request->all();
 
             // Normalizar números decimales (coma → punto)
@@ -27,9 +27,9 @@ class ConglomeradoController extends Controller
                 }
             }
 
-            //------------------------------------
+
             // 2) VALIDACIÓN (alineada con la BD)
-            //------------------------------------
+
             $validator = Validator::make($input, [
                 'codigo'        => 'required|string|max:50',
                 'region'        => 'required|string|max:100',
@@ -54,9 +54,9 @@ class ConglomeradoController extends Controller
                 ], 422);
             }
 
-            //------------------------------------
+
             // 3) CREAR CONGLOMERADO
-            //------------------------------------
+
             $conglomerado = new Conglomerado();
 
             $conglomerado->codigo_conglomerado = $input['codigo'];
@@ -69,15 +69,15 @@ class ConglomeradoController extends Controller
             $conglomerado->longitud            = $input['longitud'];
             $conglomerado->altitud             = $input['altitud'];
 
-            // 🔹 Correo: solo si hay usuario autenticado
+            // Correo: solo si hay usuario autenticado
             $user = $request->user(); // usuario autenticado (Sanctum, etc.)
             $conglomerado->correo = $user?->correo ?? null;
 
             $conglomerado->save();
 
-            //------------------------------------
+
             // 4) RESPUESTA
-            //------------------------------------
+
             return response()->json([
                 'ok'           => true,
                 'message'      => 'Conglomerado creado correctamente',

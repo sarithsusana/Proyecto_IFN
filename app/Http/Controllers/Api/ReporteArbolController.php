@@ -70,7 +70,7 @@ class ReporteArbolController extends Controller
     public function stats()
     {
         try {
-            // Ajusta nombres de tabla/columnas según tu BD
+            // Ajusta nombres de tabla/columnas segun la BD
             $totalArboles = DB::table('arbol')->count();
 
             $especiesUnicas = DB::table('arbol')

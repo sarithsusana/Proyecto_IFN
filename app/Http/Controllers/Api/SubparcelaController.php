@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Validator;
 
 class SubparcelaController extends Controller
 {
-    // ✅ LISTAR SUBPARCELAS (con filtros opcionales)
+    // LISTAR SUBPARCELAS (con filtros opcionales)
     public function index(Request $request)
     {
         $query = Subparcela::query();
@@ -36,7 +36,7 @@ class SubparcelaController extends Controller
         ]);
     }
 
-    // ✅ VER UNA SUBPARCELA POR ID
+    // VER UNA SUBPARCELA POR ID
     public function show($id)
     {
         $subparcela = Subparcela::find($id);
@@ -54,7 +54,7 @@ class SubparcelaController extends Controller
         ]);
     }
 
-    // ✅ CREAR SUBPARCELA
+    // CREAR SUBPARCELA
     public function store(Request $request)
     {
         $input = $request->all();
@@ -97,7 +97,7 @@ class SubparcelaController extends Controller
 
         $subparcela = new Subparcela();
         $subparcela->codigo_conglomerado = $input['codigo_conglomerado'];
-        $subparcela->nombre_brigada      = $cong->nombre_brigada; // viene de la tabla conglomerado
+        $subparcela->nombre_brigada      = $cong->nombre_brigada;
         $subparcela->fecha_levantamiento = $input['fecha_levantamiento'];
         $subparcela->numero_subparcela   = $input['numero_subparcela'];
         $subparcela->codigo_subparcela   = $input['codigo_subparcela'];
@@ -114,7 +114,7 @@ class SubparcelaController extends Controller
         ], 201);
     }
 
-    // ✅ ACTUALIZAR SUBPARCELA
+    //ACTUALIZAR SUBPARCELA
     public function update(Request $request, $id)
     {
         $subparcela = Subparcela::find($id);
@@ -171,7 +171,7 @@ class SubparcelaController extends Controller
         ]);
     }
 
-    // ✅ ELIMINAR SUBPARCELA
+    // ELIMINAR SUBPARCELA
     public function destroy($id)
     {
         $subparcela = Subparcela::find($id);
@@ -191,7 +191,7 @@ class SubparcelaController extends Controller
         ]);
     }
 
-    // ✅ LISTAR SUBPARCELAS POR CÓDIGO DE CONGLOMERADO (para selects dependientes)
+    //LISTAR SUBPARCELAS POR CÓDIGO DE CONGLOMERADO (para selects dependientes)
    public function listByConglomerado($codigo)
 {
     // Vamos directo a la tabla "subparcela" de tu BD actual

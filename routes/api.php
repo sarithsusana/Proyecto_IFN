@@ -10,17 +10,8 @@ use App\Http\Controllers\Api\ArbolController;
 use App\Http\Controllers\Api\PersonaController;
 use App\Http\Controllers\Api\ReporteArbolController;
 
-/*
-|--------------------------------------------------------------------------
-| Rutas API
-|--------------------------------------------------------------------------
-| Por ahora dejamos abiertas (sin auth:sanctum) las rutas que consume
-| la app estática (app.js).
-*/
 
-/* =========================
- * LOGIN (SIN SANCTUM)
- * ========================= */
+
 Route::post('/login', function (Request $request) {
 
     try {

@@ -72,7 +72,7 @@ class PersonaController extends Controller
             'correo'          => $data['correo'],
             'nombre_completo' => $data['nombre_completo'],
             'documento'       => $data['documento'],
-            'contraseña'      => $data['password'],   // en claro, igual que el login actual
+            'contraseña'      => $data['password'],  
             'tipo_usuario'    => $data['tipo_usuario'],
             'fecha_creacion'  => now(),
         ]);

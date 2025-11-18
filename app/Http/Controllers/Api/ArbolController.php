@@ -8,9 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 class ArbolController extends Controller
 {
-    /**
-     * Listar árboles (por ahora un listado simple).
-     */
+    
+    //Listar árboles
     public function index()
     {
         // Usamos la tabla REAL "arbol" (singular)
@@ -93,7 +92,6 @@ class ArbolController extends Controller
             'a.nombre_cientifico',
             'a.estado'
         )
-        // aquí el cambio importante 👇
         ->whereIn('a.estado', ['pendiente', 'pendiente_validacion'])
         ->orderBy('a.id_arbol')
         ->get();
