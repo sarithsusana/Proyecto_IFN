@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\ConglomeradoController;
 use App\Http\Controllers\Api\SubparcelaController;
 use App\Http\Controllers\Api\ArbolController;
 use App\Http\Controllers\Api\PersonaController;
+use App\Http\Controllers\Api\ReporteArbolController;
 
 /*
 |--------------------------------------------------------------------------
@@ -118,7 +119,7 @@ Route::delete('/subparcelas/{id}',  [SubparcelaController::class, 'destroy']);
 
 
 /* =====================
- * ÁRBOLES
+ * ÁRBOLES (CRUD)
  * ===================== */
 
 Route::get('/arboles',      [ArbolController::class, 'index']);
@@ -127,8 +128,12 @@ Route::post('/arboles',     [ArbolController::class, 'store']);
 Route::put('/arboles/{id}',    [ArbolController::class, 'update']);
 Route::delete('/arboles/{id}', [ArbolController::class, 'destroy']);
 
-Route::get('/arboles-pendientes', [ArbolController::class, 'pendientes']);
-Route::put('/arboles/{id}/validar', [ArbolController::class, 'validar']);
+Route::get('/arboles-pendientes',    [ArbolController::class, 'pendientes']);
+Route::put('/arboles/{id}/validar',  [ArbolController::class, 'validar']);
 
-Route::get('/reportes/arboles', [ArbolController::class, 'index']);
-Route::get('/reportes/stats',   [ArbolController::class, 'stats']);
+/* =====================
+ * REPORTES DE ÁRBOLES
+ * ===================== */
+
+Route::get('/reportes/arboles', [ReporteArbolController::class, 'index']);
+Route::get('/reportes/stats',   [ReporteArbolController::class, 'stats']);

@@ -1121,10 +1121,14 @@ const App = {
         this.cargarPendientesValidacion();
         break;
         
-      case 'reportes': 
-        this.validarPermiso('Coordinador', 'reportes');
-        this.renderReportes(); 
+         case 'reportes': {
+        const tienePermiso = this.validarPermiso('Coordinador', 'reportes');
+        if (!tienePermiso) return;
+
+        // Cargar SIEMPRE todos los datos desde el backend
+        this.cargarDatosReportes();
         break;
+      }
         
       case 'mapa': 
         setTimeout(()=>this.mapa.init(), 100); 
@@ -1355,7 +1359,10 @@ mostrarModalNuevoUsuario() {
 
   fetch(`${API_BASE}/personas`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
     body: JSON.stringify({
       correo,
       nombre_completo: nombre,
@@ -1364,13 +1371,21 @@ mostrarModalNuevoUsuario() {
       tipo_usuario: tipoUsuario,
     }),
   })
-    .then(r => r.json())
-    .then(data => {
+    .then(async (r) => {
+      const data = await r.json().catch(() => ({}));
       console.log('[IFN] Respuesta crear usuario:', data);
-      if (!data.ok) {
-        showToast(data.message || 'No se pudo crear el usuario.', 'danger');
+
+      if (!r.ok || data.ok === false) {
+        if (data.errors) {
+          const firstField = Object.keys(data.errors)[0];
+          const firstMsg   = data.errors[firstField][0] || 'Error de validación.';
+          showToast(firstMsg, 'danger');
+        } else {
+          showToast(data.message || 'No se pudo crear el usuario.', 'danger');
+        }
         return;
       }
+
       showToast('Usuario creado correctamente.', 'success');
       App.cargarTablaUsuarios();
     })
@@ -1388,7 +1403,9 @@ editarUsuario(correo) {
   if (!correo) return;
 
   // 1) Obtener datos actuales del usuario
-  fetch(`${API_BASE}/personas/${encodeURIComponent(correo)}`)
+  fetch(`${API_BASE}/personas/${encodeURIComponent(correo)}`, {
+    headers: { 'Accept': 'application/json' }
+  })
     .then(r => r.json())
     .then(data => {
       console.log('[IFN] Datos persona para editar:', data);
@@ -1423,7 +1440,7 @@ editarUsuario(correo) {
         ''
       );
 
-      // 3) Construir payload
+      // 3) Construir payload con los mismos nombres que usa el backend
       const payload = {
         correo: nuevoCorreo,
         nombre_completo: nuevoNombre,
@@ -1438,7 +1455,10 @@ editarUsuario(correo) {
       // 4) PUT al backend
       return fetch(`${API_BASE}/personas/${encodeURIComponent(correo)}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(payload),
       });
     })
@@ -1448,7 +1468,13 @@ editarUsuario(correo) {
       console.log('[IFN] Respuesta editar usuario:', data);
 
       if (!data.ok) {
-        showToast(data.message || 'No se pudo actualizar el usuario.', 'danger');
+        if (data.errors) {
+          const firstField = Object.keys(data.errors)[0];
+          const firstMsg   = data.errors[firstField][0] || 'Error de validación.';
+          showToast(firstMsg, 'danger');
+        } else {
+          showToast(data.message || 'No se pudo actualizar el usuario.', 'danger');
+        }
         return;
       }
 
@@ -2296,16 +2322,62 @@ confirmarValidacion(id) {
     });
 },
 
-  renderReportes(){
+  async cargarDatosReportes() {
+    try {
+      // Intentar cargar desde el backend Laravel
+      const res = await fetch(`${API_BASE}/reportes/arboles`, {
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        // Si el backend responde 500, 404, etc. lanzamos error
+        throw new Error(json.message || `HTTP ${res.status}`);
+      }
+
+      // Soportar ambas formas: [ ... ] o { data: [ ... ] }
+      const rows = Array.isArray(json)
+        ? json
+        : (Array.isArray(json.data) ? json.data : []);
+
+      if (rows.length) {
+        // Datos reales desde el backend
+        State.data.arboles = rows;
+      } else {
+        // Backend respondió pero vacío → usamos datos locales si hay
+        if (!State.data.arboles || !State.data.arboles.length) {
+          State.data.arboles = Database.arboles || [];
+        }
+      }
+    } catch (err) {
+      console.error('[IFN] Error cargando datos de reportes:', err);
+
+      // Si el backend falla (500, sin conexión, etc.), usamos los datos locales
+      if (!State.data.arboles || !State.data.arboles.length) {
+        State.data.arboles = Database.arboles || [];
+      }
+
+      showToast('No se pudo cargar desde el servidor. Usando datos locales.', 'warning');
+    }
+
+    // Siempre pintamos la tabla con lo que haya en State.data.arboles
+    this.renderReportes();
+  },
+
+
+  renderReportes() {
     const fFechaDesde = qs('#fFechaDesde').value;
     const fFechaHasta = qs('#fFechaHasta').value;
     const fZona = qs('#fZona').value.trim().toLowerCase();
     const fEspecie = qs('#fEspecie').value.trim().toLowerCase();
     const fTecnico = qs('#fTecnico').value.trim().toLowerCase();
     const fEstado = qs('#fEstado').value;
-    
-    let rows = State.data.arboles;
-    
+
+    let rows = State.data.arboles || [];
+
     if (fFechaDesde) {
       rows = rows.filter(a => a.fecha >= fFechaDesde);
     }
@@ -2313,47 +2385,51 @@ confirmarValidacion(id) {
       rows = rows.filter(a => a.fecha <= fFechaHasta);
     }
     if (fZona) {
-      rows = rows.filter(a => 
-        a.conglomerado.toLowerCase().includes(fZona) ||
-        (State.data.conglomerados.find(c => c.codigo === a.conglomerado)?.municipio?.toLowerCase() || '').includes(fZona)
+      rows = rows.filter(a =>
+        (a.conglomerado || '').toLowerCase().includes(fZona) ||
+        (a.municipio || '').toLowerCase().includes(fZona) ||
+        ((State.data.conglomerados || [])
+          .find(c => c.codigo === a.conglomerado)?.municipio?.toLowerCase() || ''
+        ).includes(fZona)
       );
     }
     if (fEspecie) {
-      rows = rows.filter(a => a.nombreCientifico.toLowerCase().includes(fEspecie));
+      rows = rows.filter(a => (a.nombreCientifico || '').toLowerCase().includes(fEspecie));
     }
     if (fTecnico) {
-      rows = rows.filter(a => a.validadoPor?.toLowerCase().includes(fTecnico));
+      rows = rows.filter(a => (a.validadoPor || '').toLowerCase().includes(fTecnico));
     }
     if (fEstado) {
       rows = rows.filter(a => a.estado === fEstado);
     }
-    
+
     const tb = qs('#tablaReportes tbody');
     const sinResultados = qs('#sinResultados');
     const contador = qs('#contadorResultados');
-    
+
     if (!tb || !sinResultados || !contador) return;
-    
+
     sinResultados.classList.toggle('d-none', rows.length > 0);
     contador.textContent = `${rows.length} registros`;
-    
-    tb.innerHTML = rows.length ? rows.map(a=>{
-      const conglomerado = State.data.conglomerados.find(c => c.codigo === a.conglomerado);
+
+    tb.innerHTML = rows.length ? rows.map(a => {
+      const cong = (State.data.conglomerados || []).find(c => c.codigo === a.conglomerado);
+      const municipio = a.municipio || cong?.municipio || '';
       return `
       <tr>
         <td>${a.id}</td>
-        <td>${a.conglomerado}${conglomerado ? `<br><small>${conglomerado.municipio}</small>` : ''}</td>
-        <td>${a.subparcela}</td>
-        <td><em class="nombre-cientifico">${a.nombreCientifico}</em></td>
+        <td>${a.conglomerado || ''}${municipio ? `<br><small>${municipio}</small>` : ''}</td>
+        <td>${a.subparcela || ''}</td>
+        <td><em class="nombre-cientifico">${a.nombreCientifico || ''}</em></td>
         <td>
-          <span class="badge ${a.estado==='validado' ? 'estado-validado' : 'estado-pendiente'}">
-            ${a.estado.replace('_', ' ')}
+          <span class="badge ${a.estado === 'validado' ? 'estado-validado' : 'estado-pendiente'}">
+            ${(a.estado || '').replace('_', ' ')}
           </span>
         </td>
-        <td>${a.validadoPor||'-'}</td>
-        <td>${a.fecha}</td>
-        <td>${a.dap || '-'}</td>
-        <td>${a.altura || '-'}</td>
+        <td>${a.validadoPor || '-'}</td>
+        <td>${a.fecha || ''}</td>
+        <td>${a.dap ?? '-'}</td>
+        <td>${a.altura ?? '-'}</td>
       </tr>`;
     }).join('')
       : `<tr><td colspan="9" class="text-center text-muted py-3">No hay información para los filtros seleccionados</td></tr>`;
@@ -2370,33 +2446,33 @@ confirmarValidacion(id) {
     showToast('Filtros limpiados', 'info');
   },
 
-  exportCSV(){
+  exportCSV() {
     const rows = [['ID','Conglomerado','Subparcela','Nombre científico','Estado','Validado por','Fecha','DAP (cm)','Altura (m)']];
-    const tb = qs('#tablaReportes tbody'); 
-    
+    const tb = qs('#tablaReportes tbody');
+
     if (!tb) {
-      showToast('No hay datos para exportar', 'warning'); 
+      showToast('No hay datos para exportar', 'warning');
       return;
     }
-    
+
     const trs = Array.from(tb.querySelectorAll('tr'));
-    trs.forEach(tr=>{ 
-      const tds = Array.from(tr.querySelectorAll('td')).map(td=>{
+    trs.forEach(tr => {
+      const tds = Array.from(tr.querySelectorAll('td')).map(td => {
         let text = td.innerText.replace(/\n/g,' ').replace(/,/g,';');
         text = text.replace(/<[^>]*>/g, '').trim();
         return `"${text}"`;
-      }); 
-      if(tds.length === 9) rows.push(tds); 
+      });
+      if (tds.length === 9) rows.push(tds);
     });
-    
-    if(rows.length <= 1){ 
-      showToast('No hay datos para exportar', 'warning'); 
-      return; 
+
+    if (rows.length <= 1) {
+      showToast('No hay datos para exportar', 'warning');
+      return;
     }
-    
-    const csv = rows.map(r=>r.join(',')).join('\n'); 
+
+    const csv = rows.map(r => r.join(',')).join('\n');
     const timestamp = new Date().toISOString().slice(0,10);
-    download(`reporte_ifn_${timestamp}.csv`, csv); 
+    download(`reporte_ifn_${timestamp}.csv`, csv);
     showToast('Reporte CSV exportado exitosamente', 'primary');
   },
 
@@ -2420,95 +2496,105 @@ confirmarValidacion(id) {
     }
   },
 
-  mostrarEstadisticas() {
-    const stats = Database.getStatistics();
-    
-    const modalHTML = `
-      <div class="modal fade" id="statsModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title"><i class="bi bi-graph-up me-2"></i>Estadísticas del IFN</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-              <div class="row g-3">
-                <div class="col-md-6">
-                  <div class="card border-0 bg-light">
-                    <div class="card-body text-center">
-                      <h3 class="text-primary">${stats.totalArboles}</h3>
-                      <p class="mb-0">Total de árboles registrados</p>
+  async mostrarEstadisticas() {
+    try {
+      const res = await fetch('/api/reportes/stats');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+
+      const json = await res.json();
+      const stats = json.data || json;
+
+      const modalHTML = `
+        <div class="modal fade" id="statsModal" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-graph-up me-2"></i>Estadísticas del IFN</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                      <div class="card-body text-center">
+                        <h3 class="text-primary">${stats.totalArboles}</h3>
+                        <p class="mb-0">Total de árboles registrados</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="card border-0 bg-light">
-                    <div class="card-body text-center">
-                      <h3 class="text-success">${stats.especiesUnicas}</h3>
-                      <p class="mb-0">Especies diferentes</p>
+                  <div class="col-md-6">
+                    <div class="card border-0 bg-light">
+                      <div class="card-body text-center">
+                        <h3 class="text-success">${stats.especiesUnicas}</h3>
+                        <p class="mb-0">Especies diferentes</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card border-0">
-                    <div class="card-body text-center">
-                      <h6>Validados</h6>
-                      <h4 class="text-success">${stats.validados}</h4>
+                  <div class="col-md-4">
+                    <div class="card border-0">
+                      <div class="card-body text-center">
+                        <h6>Validados</h6>
+                        <h4 class="text-success">${stats.validados}</h4>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card border-0">
-                    <div class="card-body text-center">
-                      <h6>Pendientes</h6>
-                      <h4 class="text-warning">${stats.pendientes}</h4>
+                  <div class="col-md-4">
+                    <div class="card border-0">
+                      <div class="card-body text-center">
+                        <h6>Pendientes</h6>
+                        <h4 class="text-warning">${stats.pendientes}</h4>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="card border-0">
-                    <div class="card-body text-center">
-                      <h6>Conglomerados</h6>
-                      <h4 class="text-info">${stats.conglomeradosActivos}</h4>
+                  <div class="col-md-4">
+                    <div class="card border-0">
+                      <div class="card-body text-center">
+                        <h6>Conglomerados</h6>
+                        <h4 class="text-info">${stats.conglomeradosActivos}</h4>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div class="col-12">
-                  <div class="card border-0">
-                    <div class="card-body">
-                      <h6>Medidas Promedio</h6>
-                      <div class="row text-center">
-                        <div class="col-6">
-                          <strong>DAP:</strong> ${stats.dapPromedio} cm
-                        </div>
-                        <div class="col-6">
-                          <strong>Altura:</strong> ${stats.alturaPromedio} m
+                  <div class="col-12">
+                    <div class="card border-0">
+                      <div class="card-body">
+                        <h6>Medidas Promedio</h6>
+                        <div class="row text-center">
+                          <div class="col-6">
+                            <strong>DAP:</strong> ${stats.dapPromedio} cm
+                          </div>
+                          <div class="col-6">
+                            <strong>Altura:</strong> ${stats.alturaPromedio} m
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    `;
-    
-    const modalContainer = document.createElement('div');
-    modalContainer.innerHTML = modalHTML;
-    document.body.appendChild(modalContainer);
-    
-    const modal = new bootstrap.Modal(document.getElementById('statsModal'));
-    modal.show();
-    
-    document.getElementById('statsModal').addEventListener('hidden.bs.modal', function () {
-      modalContainer.remove();
-    });
+      `;
+
+      const modalContainer = document.createElement('div');
+      modalContainer.innerHTML = modalHTML;
+      document.body.appendChild(modalContainer);
+
+      const modal = new bootstrap.Modal(document.getElementById('statsModal'));
+      modal.show();
+
+      document.getElementById('statsModal').addEventListener('hidden.bs.modal', function () {
+        modalContainer.remove();
+      });
+    } catch (err) {
+      console.error(err);
+      showToast('Error cargando estadísticas', 'danger');
+    }
   },
+
 
   mapa: {
     init(){

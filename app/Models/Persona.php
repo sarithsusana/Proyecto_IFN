@@ -2,25 +2,33 @@
 
 namespace App\Models;
 
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Laravel\Sanctum\HasApiTokens;
-use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Model;
 
-class Persona extends Authenticatable
+class Persona extends Model
 {
-    use HasApiTokens, HasRoles;
-
     protected $table = 'persona';
-    protected $primaryKey = 'documento';
+
+    // Si quieres que la PK lógica sea el correo:
+    protected $primaryKey = 'correo';
     public $incrementing = false;
     protected $keyType = 'string';
+
     public $timestamps = false;
 
-    protected $fillable = ['documento','nombre_completo','correo','contrasena','tipo_persona','id_administrador'];
-    protected $hidden   = ['contrasena'];
+    protected $fillable = [
+        'correo',
+        'nombre_completo',
+        'documento',
+        'contraseña',
+        'tipo_usuario',
+        'fecha_creacion',
+    ];
 
-    public function getAuthPassword()
-    {
-        return $this->contrasena; // usa la columna 'contrasena'
-    }
+    protected $hidden = [
+        'contraseña',
+    ];
+
+    protected $casts = [
+        'fecha_creacion' => 'datetime',
+    ];
 }
