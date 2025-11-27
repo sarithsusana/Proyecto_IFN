@@ -192,11 +192,11 @@ class SubparcelaController extends Controller
     }
 
     //LISTAR SUBPARCELAS POR CÓDIGO DE CONGLOMERADO (para selects dependientes)
-   public function listByConglomerado($codigo)
+public function listByConglomerado($codigo)
 {
-    // Vamos directo a la tabla "subparcela" de tu BD actual
     $subparcelas = \DB::table('subparcela')
         ->where('codigo_conglomerado', $codigo)
+        ->where('numero_subparcela', '<=', 5)
         ->orderBy('numero_subparcela')
         ->get([
             'id_subparcela',
@@ -205,9 +205,10 @@ class SubparcelaController extends Controller
         ]);
 
     return response()->json([
-        'ok'         => true,
-        'subparcelas'=> $subparcelas,
+        'ok'          => true,
+        'subparcelas' => $subparcelas,
     ]);
 }
+
 
 }

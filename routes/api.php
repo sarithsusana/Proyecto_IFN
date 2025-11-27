@@ -92,6 +92,7 @@ Route::post('/conglomerados', [ConglomeradoController::class, 'store']);
 Route::get('/conglomerados',      [ConglomeradoController::class, 'index']);
 Route::get('/conglomerados/list', [ConglomeradoController::class, 'index']);
 
+
 Route::get(
     '/conglomerados/{codigo}/subparcelas',
     [SubparcelaController::class, 'listByConglomerado']

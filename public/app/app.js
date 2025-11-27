@@ -1103,7 +1103,8 @@ const App = {
       case 'arbol':
         this.mostrarInfoEstadoArbol();
 
-        fillSelect('#arCong', State.data.conglomerados, c=>`<option value="${c.codigo}">${c.codigo}</option>`);
+        //Ahora los conglomerados se cargan desde el backend 
+        this.updateConglomerados();
 
         const congSelect = qs('#arCong');
         if (congSelect && !congSelect.dataset.subpListener) {
@@ -1111,10 +1112,12 @@ const App = {
           congSelect.dataset.subpListener = '1';
         }
 
-        this.updateSubparcelas();
+        //Cargar subparcelas después de llenar el combo de conglomerados
+        setTimeout(() => this.updateSubparcelas(), 300);
 
         setTimeout(() => setupAutosave('formArbol', 'arbol'), 100);
         break;
+
 
       case 'validacion': 
         this.validarPermiso('Botanico', 'validacion');
@@ -1662,62 +1665,109 @@ desactivarUsuario(correo) {
     }
   },
 
-  updateSubparcelas() {
-    const congSelect = qs('#arCong');
-    const subSelect  = qs('#arSub');
 
-    if (!congSelect || !subSelect) return;
 
-    const codigo = congSelect.value.trim();
+updateSubparcelas() {
+  const congSelect = qs('#arCong');
+  const subSelect  = qs('#arSub');
 
-    subSelect.innerHTML = '<option value="">Seleccione…</option>';
-    subSelect.disabled = true;
+  if (!congSelect || !subSelect) return;
 
-    if (!codigo) {
-      return;
+  const codigo = congSelect.value.trim();
+
+  subSelect.innerHTML = '<option value="">Seleccione…</option>';
+  subSelect.disabled = true;
+
+  if (!codigo) {
+    return;
+  }
+
+  console.log('[IFN] Cargando subparcelas desde backend para', codigo);
+
+  const token = State?.user?.token || localStorage.getItem('IFN_TOKEN');
+
+  fetch(`http://127.0.0.1:8000/api/conglomerados/${encodeURIComponent(codigo)}/subparcelas`, {
+    headers: {
+      'Accept': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     }
+  })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
 
-    console.log('[IFN] Cargando subparcelas desde backend para', codigo);
-
-    const token = State?.user?.token || localStorage.getItem('IFN_TOKEN');
-
-    fetch(`http://127.0.0.1:8000/api/conglomerados/${encodeURIComponent(codigo)}/subparcelas`, {
-      headers: {
-        'Accept': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      if (!res.ok) {
+        console.error('[IFN] Error HTTP al cargar subparcelas:', res.status, data);
+        subSelect.innerHTML = '<option value="">Error cargando subparcelas</option>';
+        return;
       }
+
+      let lista = data.subparcelas || [];
+
+      // Filtro extra por si acaso: solo 1–5
+      lista = lista.filter(sp => (sp.numero_subparcela ?? 0) <= 5);
+
+      if (!lista.length) {
+        subSelect.innerHTML = '<option value="">No hay subparcelas para este conglomerado</option>';
+        return;
+      }
+
+      subSelect.innerHTML =
+        '<option value="">Seleccione…</option>' +
+        lista.map(sp => {
+          const id  = sp.id_subparcela ?? sp.id;
+          const num = sp.numero_subparcela ?? '';
+          return `<option value="${id}">Subparcela ${num}</option>`;
+        }).join('');
+
+      subSelect.disabled = false;
     })
+    .catch((err) => {
+      console.error('[IFN] Error al conectar para cargar subparcelas:', err);
+      subSelect.innerHTML = '<option value="">Error cargando subparcelas</option>';
+    });
+},
+
+
+  updateConglomerados() {
+    console.log('[IFN] updateConglomerados llamado');
+    const congSelect = qs('#arCong');
+    if (!congSelect) return;
+
+    congSelect.innerHTML = '<option value="">Seleccione…</option>';
+    congSelect.disabled = true;
+
+    fetch('http://127.0.0.1:8000/api/conglomerados')
       .then(async (res) => {
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-          console.error('[IFN] Error HTTP al cargar subparcelas:', res.status, data);
-          subSelect.innerHTML = '<option value="">Error cargando subparcelas</option>';
+          console.error('[IFN] Error HTTP al cargar conglomerados:', res.status, data);
+          congSelect.innerHTML = '<option value="">Error cargando conglomerados</option>';
           return;
         }
 
-        const lista = data.subparcelas || [];
+        const lista = data.conglomerados || [];
+
         if (!lista.length) {
-          subSelect.innerHTML = '<option value="">No hay subparcelas para este conglomerado</option>';
+          congSelect.innerHTML = '<option value="">No hay conglomerados registrados</option>';
           return;
         }
 
-        subSelect.innerHTML =
+        congSelect.innerHTML =
           '<option value="">Seleccione…</option>' +
-          lista.map(sp => {
-            const id   = sp.id_subparcela ?? sp.id;
-            const cod  = sp.codigo_subparcela ?? sp.codigo;
-            const num  = sp.numero_subparcela ?? '';
-            return `<option value="${id}">Subparcela ${num} — ${cod}</option>`;
+          lista.map(c => {
+            const cod = c.codigo_conglomerado ?? c.codigo;
+            return `<option value="${cod}">${cod}</option>`;
           }).join('');
 
-        subSelect.disabled = false;
+        congSelect.disabled = false;
       })
       .catch((err) => {
-        console.error('[IFN] Error al conectar para cargar subparcelas:', err);
-        subSelect.innerHTML = '<option value="">Error cargando subparcelas</option>';
+        console.error('[IFN] Error al conectar para cargar conglomerados:', err);
+        congSelect.innerHTML = '<option value="">Error cargando conglomerados</option>';
       });
   },
+
 
   // Método de login antiguo (para compatibilidad)
   login(role){ 
